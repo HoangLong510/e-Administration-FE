@@ -1,0 +1,11 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+a {
+	outline: none !important;
+	text-decoration: none;
+	-webkit-tap-highlight-color: transparent !important;
+}
