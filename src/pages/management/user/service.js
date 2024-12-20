@@ -56,3 +56,41 @@ export const disableUserApi = async (id) => {
         }
     }
 }
+
+export const getUserApi = async (id) => {
+    try {
+        const res = await axios.get(`/management/user/get-user/${id}`, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        return res.data
+    } catch (error) {
+        if (error.response) {
+            return error.response.data
+        }
+        return {
+            success: false,
+            message: "Server is having problems, please try again later"
+        }
+    }
+}
+
+export const editUserApi = async (user) => {
+    try {
+        const res = await axios.put('/management/user/edit-user', user, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        return res.data
+    } catch (error) {
+        if (error.response) {
+            return error.response.data
+        }
+        return {
+            success: false,
+            message: "Server is having problems, please try again later"
+        }
+    }
+}

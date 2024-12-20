@@ -244,11 +244,13 @@ export default function User() {
 
 										<TableCell align='right'>
 											<Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-												<Tooltip title="Edit">
-													<IconButton>
-														<EditIcon />
-													</IconButton>
-												</Tooltip>
+												{user.username !== "admin" && (
+													<Tooltip title="Edit">
+														<IconButton component={Link} to={`/management/user/edit/${user.id}`}>
+															<EditIcon />
+														</IconButton>
+													</Tooltip>
+												)}
 												{active && user.username !== "admin" && (
 													<Tooltip title="Delete">
 														<IconButton onClick={() => {
