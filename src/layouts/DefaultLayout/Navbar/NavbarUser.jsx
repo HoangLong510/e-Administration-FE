@@ -76,7 +76,7 @@ export default function NavbarUser() {
                 transformOrigin={{ horizontal: 'right', vertical: 'top' }}
                 anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
             >
-                <MenuItem onClick={handleClose} sx={{ height: '45px' }}>
+                <MenuItem component={Link} to='/profile' onClick={handleClose} sx={{ height: '45px' }}>
                     <Avatar sx={{ width: '25px', height: '25px' }} src={user.data.avatar} />
                     <Typography sx={{ ml: 1, width: '150px' }}>
                         {user.data.fullName}
