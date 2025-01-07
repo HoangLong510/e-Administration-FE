@@ -18,6 +18,10 @@ const regex = {
     email: {
         pattern: /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
         message: "Email address is not valid"
+    },
+    address: {
+        pattern: /^(?!\s|[,.-])[a-zA-Z0-9\u0080-\uFFFF\s,.-]{6,100}(?<!\s|[,.-])$/,
+        message: "Address must be between 6 and 100 characters and can only include letters, numbers, commas, periods, and hyphens"
     }
 }
 
