@@ -3,8 +3,7 @@ import { Box, Grid, Paper, Typography } from "@mui/material";
 import { Business, Group, Devices, Report } from "@mui/icons-material";
 import { Line, Pie } from "react-chartjs-2";
 import "chart.js/auto";
-import { fetchTotalUsers } from "./service";
-
+import { fetchTotalUsers, fetchTotalPendingReports } from "./service";
 
 const lineData = {
   labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"],
@@ -34,6 +33,7 @@ const pieData = {
 
 const Home = () => {
   const [totalUsers, setTotalUsers] = useState(0);
+  const [totalPendingReports, setTotalPendingReports] = useState(0);
 
   useEffect(() => {
     const getTotalUsers = async () => {
@@ -45,7 +45,17 @@ const Home = () => {
       }
     };
 
+    const getTotalPendingReports = async () => {
+      const result = await fetchTotalPendingReports();
+      if (result.success) {
+        setTotalPendingReports(result.totalPending);
+      } else {
+        console.error(result.message);
+      }
+    };
+
     getTotalUsers();
+    getTotalPendingReports();
   }, []);
 
   return (
@@ -62,7 +72,6 @@ const Home = () => {
         justifyContent: "space-between",
       }}
     >
-      {/* Tiêu đề Dashboard */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" fontWeight="bold">
           Dashboard
@@ -159,7 +168,7 @@ const Home = () => {
               Reports Pending
             </Typography>
             <Typography variant="h4" fontWeight="bold">
-              12
+            {totalPendingReports}
             </Typography>
             <Typography variant="body2" color="yellow" mt={1}>
               -10% This Month

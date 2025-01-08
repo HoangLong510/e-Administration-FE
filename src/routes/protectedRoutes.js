@@ -4,6 +4,7 @@ import Profile from "~/pages/auth/profile/Profile"
 import Report from "~/pages/auth/report/Report"
 import ListReport from "~/pages/auth/report/ListReport"
 import ChangePassword from "~/pages/auth/profile/ChangePassword"
+import ReportDetails from "~/pages/auth/report/ReportDetails"
 const protectedRoutes = [
     {
         path: '/',
@@ -55,6 +56,20 @@ const protectedRoutes = [
             "Student"
         ]
     },
+
+    {
+        path: '/report-details/:id',
+        component: ReportDetails,
+        layout: DefaultLayout,
+        roles: [
+            "Admin",
+            "Instructor",
+            "HOD",
+            "TechnicalStaff",
+            "Student"
+        ]
+    },
+
     {
         path: '/changepassword',
         component: ChangePassword,

@@ -19,7 +19,6 @@ const ChangePassword = () => {
     setErrors({});
   };
 
-  // Kiểm tra lỗi khi người dùng nhập vào trường
   const validateField = useCallback((name, value) => {
     let error = "";
 
@@ -40,24 +39,19 @@ const ChangePassword = () => {
     return error;
   }, [newPassword]);
 
-  // Hàm xử lý sự kiện thay đổi giá trị trường nhập liệu
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
-    // Cập nhật giá trị của các trường
     if (name === "oldPassword") setOldPassword(value);
     if (name === "newPassword") setNewPassword(value);
     if (name === "confirmPassword") setConfirmPassword(value);
 
-    // Kiểm tra lỗi ngay lập tức
     validateField(name, value);
   };
 
-  // Hàm xử lý khi submit form
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Kiểm tra mật khẩu mới và xác nhận mật khẩu có khớp không
     if (newPassword !== confirmPassword) {
       dispatch(setPopup({
         type: "error",
@@ -75,7 +69,6 @@ const ChangePassword = () => {
           message: response.message || 'Password changed successfully!',
         }));
 
-        // Làm sạch các trường khi cập nhật thành công
         clearFields();
       } else {
         dispatch(setPopup({

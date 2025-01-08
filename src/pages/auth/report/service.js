@@ -24,41 +24,37 @@ export const createReport = async (newReport, images = []) => {
   }
 };
 
-export const getReportsByUser = async ({ senderId, category }) => {
+export const getReportsByUser = async ({ senderId, category, status, page = 1, pageSize = 10 }) => {
   try {
     const res = await axios.get('/report/list', {
       headers: { 'Content-Type': 'application/json' },
       params: {
         senderId,
         category: category || null,
+        status: status || null,
+        page,
+        pageSize,
       }
     });
     console.log("Response data:", res.data);
     return res.data;
   } catch (error) {
-    console.error("Error fetching reports:", error); // Log detailed error
+    console.error("Error fetching reports:", error);
     return { success: false, message: error.response?.data?.message || "Server error" };
   }
 };
 
 
-
-
-export const deleteReport = async (id) => {
-  try {
-    const res = await axios.delete(`/report/${id}`);
-    return res.data;
-  } catch (error) {
-    return { success: false, message: "An error occurred while deleting" };
-  }
-};
-
-
-export const getAllReports = async ({ category }) => {  // Nhận category từ tham số
+export const getAllReports = async ({ category, status, page = 1, pageSize = 10 }) => {
   try {
     const res = await axios.get('/report/all', {
       headers: { 'Content-Type': 'application/json' },
-      params: { category }
+      params: {
+        category: category || null,
+        status: status || null,
+        page,
+        pageSize,
+      }
     });
     return res.data;
   } catch (error) {
@@ -66,3 +62,19 @@ export const getAllReports = async ({ category }) => {  // Nhận category từ 
     return { success: false, message: error.response?.data?.message || "Server error" };
   }
 };
+
+export const updateReportStatus = async (reportId, status) => {
+  try {
+    const response = await axios.put(`/report/${reportId}/status`, status, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error updating report status:", error.response || error.message);
+    throw error;
+  }
+};
+
