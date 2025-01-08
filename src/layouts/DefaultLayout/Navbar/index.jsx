@@ -5,6 +5,7 @@ import MenuOpenIcon from '@mui/icons-material/MenuOpen'
 import { Link } from 'react-router-dom'
 import NavbarUser from './NavbarUser'
 import { useSelector } from 'react-redux'
+import NavbarNotification from './NavbarNotification'
 
 export default function Navbar({ openMenu, setOpenMenu }) {
 
@@ -67,9 +68,15 @@ export default function Navbar({ openMenu, setOpenMenu }) {
                         />
                     </Link>
                 </Box>
-
-                {/* Right */}
-                <NavbarUser />
+                <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '20px',
+                    marginLeft: 'auto',
+                }}>
+                    <NavbarNotification />
+                    <NavbarUser />
+                </Box>
             </Box>
         </Box>
     )
