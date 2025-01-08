@@ -356,7 +356,7 @@ function ClassManagement() {
                 <TableRow key={cls.id}>
                   <TableCell style={{ display: "none" }}>{cls.id}</TableCell>
                   <TableCell
-                    sx={{ pl: 10 }}
+                    sx={{ pl: 7 }}
                     style={{ cursor: "pointer" }}
                     onClick={() => handleClassClick(cls.id)}
                   >
