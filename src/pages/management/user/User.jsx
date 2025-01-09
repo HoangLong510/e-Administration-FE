@@ -81,7 +81,7 @@ export default function User() {
 		dispatch(setLoading())
 		const res = await fetchUsersApi(data)
 		dispatch(clearLoading())
-
+		console.log(res)
 		if (res.success) {
 			setUsers(res.users)
 			setTotalPage(res.totalPages)

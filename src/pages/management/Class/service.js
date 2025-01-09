@@ -101,3 +101,45 @@ export const updateClass = async (id, updatedClass) => {
     };
   }
 };
+
+export const checkClassNameExists = async (className) => {
+  try {
+    const res = await axios.get('/management/class/check-name', {
+      params: { name: className },
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return res.data;
+  } catch (error) {
+    if (error.response) {
+      return error.response.data;
+    }
+    return {
+      success: false,
+      message: "Server is having problems, please try again later"
+    };
+  }
+};
+
+export const getUsersByClassId = async (classId) => {
+  try {
+    const res = await axios.get(`/management/class/${classId}/users`, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    return res.data;
+  } catch (error) {
+    if (error.response) {
+      return error.response.data;
+    }
+    return {
+      success: false,
+      message: "Server is having problems, please try again later"
+    };
+  }
+};
+
+
+
