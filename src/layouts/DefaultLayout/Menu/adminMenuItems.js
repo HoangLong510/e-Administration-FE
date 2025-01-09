@@ -3,7 +3,9 @@ import FeedbackIcon from '@mui/icons-material/Feedback'
 import DevicesRoundedIcon from '@mui/icons-material/DevicesRounded'
 import RoomPreferencesRoundedIcon from '@mui/icons-material/RoomPreferencesRounded'
 import ClassRoundedIcon from '@mui/icons-material/ClassRounded';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
 import Diversity2Icon from '@mui/icons-material/Diversity2';
+
 
 const adminMenuItems = [
     {
@@ -32,6 +34,12 @@ const adminMenuItems = [
         icon: ClassRoundedIcon,
     },
     {
+
+        label: "Document",
+        href: `/management/document`,
+        icon: MenuBookIcon,
+    },
+  { 
         label: "Departments",
         href: `/management/department`,
         icon: Diversity2Icon,
