@@ -6,16 +6,11 @@ import ReportGmailerrorredRoundedIcon from '@mui/icons-material/ReportGmailerror
 
 const menuItems = [
     {
-        label: "Homepage",
-        href: `/`,
+        label: "Dasboard",
+        href: `/dashboard`,
         icon: HomeRoundedIcon,
         role: [
             "Admin",
-            "Instructor",
-            "HOD",
-            "TechnicalStaff",
-            "Student",
-            "User"
         ]
     },
     {
