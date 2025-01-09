@@ -102,9 +102,7 @@ const MenuList = ({ pathname, open, role }) => {
                     )
                 })}
             </List>
-            <Divider />
             <AdminListItem pathname={pathname} open={open} />
-            <Divider />
         </>
     )
 }
