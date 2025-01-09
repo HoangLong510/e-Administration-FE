@@ -2,19 +2,15 @@ import HomeRoundedIcon from '@mui/icons-material/HomeRounded'
 import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded'
 import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded'
 import DesktopWindowsRoundedIcon from '@mui/icons-material/DesktopWindowsRounded'
+import ReportGmailerrorredRoundedIcon from '@mui/icons-material/ReportGmailerrorredRounded';
 
 const menuItems = [
     {
-        label: "Homepage",
-        href: `/`,
+        label: "Dasboard",
+        href: `/dashboard`,
         icon: HomeRoundedIcon,
         role: [
             "Admin",
-            "Instructor",
-            "HOD",
-            "TechnicalStaff",
-            "Student",
-            "User"
         ]
     },
     {
@@ -46,6 +42,22 @@ const menuItems = [
             "Student",
         ]
     },
+
+    {
+        label: "Reports",
+        href: `/report`,
+        icon: ReportGmailerrorredRoundedIcon,
+        role: [
+            "Admin",
+            "Instructor",
+            "HOD",
+            "TechnicalStaff",
+            "Student",
+            "User"
+        ]
+    },
+
+    
 ]
 
 export default menuItems

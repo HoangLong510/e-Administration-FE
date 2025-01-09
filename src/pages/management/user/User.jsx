@@ -22,13 +22,14 @@ import {
 	Pagination,
 	InputLabel,
 	FormControl,
+	CircularProgress,
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import { fetchUsersApi } from './service'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { setPopup } from '~/libs/features/popup/popupSlice'
 import { clearLoading, setLoading } from '~/libs/features/loading/loadingSlice'
 import { Link } from 'react-router-dom'
@@ -43,6 +44,8 @@ const RenderStatus = ({ isActive }) => {
 
 export default function User() {
 	const dispatch = useDispatch()
+	const loading = useSelector(state => state.loading.value)
+
 	const [firstRender, setFirstRender] = useState(true)
 
 	const [users, setUsers] = useState([])
@@ -78,7 +81,7 @@ export default function User() {
 		dispatch(setLoading())
 		const res = await fetchUsersApi(data)
 		dispatch(clearLoading())
-
+		console.log(res)
 		if (res.success) {
 			setUsers(res.users)
 			setTotalPage(res.totalPages)
@@ -182,6 +185,13 @@ export default function User() {
 									startAdornment: (
 										<InputAdornment position="start">
 											<SearchIcon />
+										</InputAdornment>
+									),
+									endAdornment: (
+										<InputAdornment position="start">
+											{loading && (
+												<CircularProgress size="20px" />
+											)}
 										</InputAdornment>
 									)
 								}
