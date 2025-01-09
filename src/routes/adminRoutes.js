@@ -14,7 +14,7 @@ const adminRoutes = [
     { path: '/management/user/edit/:userId', component: EditUser, layout: DefaultLayout },
     { path: '/management/class', component: Class, layout: DefaultLayout },
     { path: '/management/department', component: Department, layout: DefaultLayout },
-    { path: '/management/feedback', component: Feedbacks, layout: DefaultLayout }
+    // { path: '/management/feedback', component: Feedbacks, layout: DefaultLayout },
     { path: "/management/class/:classId/users", component: ListUser, layout: DefaultLayout },
 ]
 

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import {
     Box,
     Button,
@@ -14,7 +14,7 @@ import {
     FormHelperText
 } from '@mui/material'
 import { Link, useNavigate } from 'react-router-dom'
-import { createUserApi } from './service'
+import { createUserApi, getAllClassesApi, getAllDepartmentsApi } from './service'
 import { useDispatch } from 'react-redux'
 import { setPopup } from '~/libs/features/popup/popupSlice'
 import { clearLoading, setLoading } from '~/libs/features/loading/loadingSlice'
@@ -58,6 +58,24 @@ export default function CreateUser() {
     today.setDate(today.getDate() - 1)
     const yesterday = today.toISOString().split('T')[0]
 
+    const [classes, setClasses] = useState([])
+    const [departments, setDepartments] = useState([])
+
+    const handleGetAllClasses = async () => {
+        const res = await getAllClassesApi()
+        setClasses(res.data)
+    }
+
+    const handleGetAllDepartments = async () => {
+        const res = await getAllDepartmentsApi()
+        setDepartments(res.data)
+    }
+
+    useEffect(() => {
+        handleGetAllClasses()
+        handleGetAllDepartments()
+    }, [])
+
     const [formData, setFormData] = useState({
         fullName: "",
         username: "",
@@ -69,8 +87,8 @@ export default function CreateUser() {
         dateOfBirth: "",
         gender: "Other",
         role: "",
-        classId: null,
-        departmentId: null
+        classId: 0,
+        departmentId: 0
     })
 
     const [touched, setTouched] = useState({
@@ -382,10 +400,10 @@ export default function CreateUser() {
                                 name="role"
                                 value={formData.role}
                                 onChange={(e) => {
-									formData.classId = null
-									formData.departmentId = null
-									handleInputChange(e)
-								}}
+                                    formData.classId = 0
+                                    formData.departmentId = 0
+                                    handleInputChange(e)
+                                }}
                                 onBlur={handleBlur}
                                 label="Role"
                             >
@@ -411,9 +429,12 @@ export default function CreateUser() {
                                     onBlur={handleBlur}
                                     label="Select class"
                                 >
-                                    <MenuItem value={null}>--- select class ---</MenuItem>
-                                    <MenuItem value={1}>Class1</MenuItem>
-                                    <MenuItem value={2}>Class2</MenuItem>
+                                    <MenuItem value={0}>--- select class ---</MenuItem>
+                                    {classes.map((item) => {
+                                        return (
+                                            <MenuItem key={item.id} value={item.id}>{item.name}</MenuItem>
+                                        )
+                                    })}
                                 </Select>
                             </FormControl>
                         </Grid>
@@ -430,9 +451,12 @@ export default function CreateUser() {
                                     onBlur={handleBlur}
                                     label="Select department"
                                 >
-                                    <MenuItem value={null}>--- select department ---</MenuItem>
-                                    <MenuItem value={1}>department1</MenuItem>
-                                    <MenuItem value={2}>department2</MenuItem>
+                                    <MenuItem value={0}>--- select department ---</MenuItem>
+                                    {departments.map((item) => {
+                                        return (
+                                            <MenuItem key={item.id} value={item.id}>{item.name}</MenuItem>
+                                        )
+                                    })}
                                 </Select>
                             </FormControl>
                         </Grid>

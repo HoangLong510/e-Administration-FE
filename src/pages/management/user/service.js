@@ -94,3 +94,35 @@ export const editUserApi = async (user) => {
         }
     }
 }
+
+export const getAllClassesApi = async () => {
+    try {
+        const res = await axios.get('/management/class/get-all-classes-no-pagination', {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        return res.data
+    } catch (error) {
+        return {
+            success: false,
+            data: []
+        }
+    }
+}
+
+export const getAllDepartmentsApi = async () => {
+    try {
+        const res = await axios.get('/management/departments/get-all-departments-no-pagination', {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        return res.data
+    } catch (error) {
+        return {
+            success: false,
+            data: []
+        }
+    }
+}

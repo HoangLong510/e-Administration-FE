@@ -21,7 +21,7 @@ import regex from '~/utils/regex'
 import EditIcon from '@mui/icons-material/Edit'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import { editUserApi, getUserApi } from './service'
+import { editUserApi, getAllClassesApi, getAllDepartmentsApi, getUserApi } from './service'
 
 const CustomTextField = ({ name, label, value, onChange, error, touched, onBlur, type = 'text', ...props }) => {
 	return (
@@ -59,6 +59,24 @@ export default function EditUser() {
 	today.setDate(today.getDate() - 1)
 	const yesterday = today.toISOString().split('T')[0]
 
+	const [classes, setClasses] = useState([])
+	const [departments, setDepartments] = useState([])
+
+	const handleGetAllClasses = async () => {
+		const res = await getAllClassesApi()
+		setClasses(res.data)
+	}
+
+	const handleGetAllDepartments = async () => {
+		const res = await getAllDepartmentsApi()
+		setDepartments(res.data)
+	}
+
+	useEffect(() => {
+		handleGetAllClasses()
+		handleGetAllDepartments()
+	}, [])
+
 	const [formData, setFormData] = useState({
 		id: userId,
 		fullName: "",
@@ -69,8 +87,8 @@ export default function EditUser() {
 		dateOfBirth: "",
 		gender: "Other",
 		role: "",
-		classId: null,
-		departmentId: null,
+		classId: 0,
+		departmentId: 0,
 		isActive: true,
 	})
 
@@ -362,8 +380,8 @@ export default function EditUser() {
 								name="role"
 								value={formData.role}
 								onChange={(e) => {
-									formData.classId = null
-									formData.departmentId = null
+									formData.classId = 0
+									formData.departmentId = 0
 									handleInputChange(e)
 								}}
 								onBlur={handleBlur}
@@ -391,9 +409,12 @@ export default function EditUser() {
 									onBlur={handleBlur}
 									label="Select class"
 								>
-									<MenuItem value={null}>--- select class ---</MenuItem>
-									<MenuItem value={1}>Class1</MenuItem>
-									<MenuItem value={2}>Class2</MenuItem>
+									<MenuItem value={0}>--- select class ---</MenuItem>
+									{classes.map((item) => {
+										return (
+											<MenuItem key={item.id} value={item.id}>{item.name}</MenuItem>
+										)
+									})}
 								</Select>
 							</FormControl>
 						</Grid>
@@ -410,9 +431,12 @@ export default function EditUser() {
 									onBlur={handleBlur}
 									label="Select department"
 								>
-									<MenuItem value={null}>--- select department ---</MenuItem>
-									<MenuItem value={1}>department1</MenuItem>
-									<MenuItem value={2}>department2</MenuItem>
+									<MenuItem value={0}>--- select department ---</MenuItem>
+									{departments.map((item) => {
+										return (
+											<MenuItem key={item.id} value={item.id}>{item.name}</MenuItem>
+										)
+									})}
 								</Select>
 							</FormControl>
 						</Grid>
