@@ -8,12 +8,21 @@ import {
   Grid,
   Chip,
   Divider,
+  ListItem,
+  ListItemText,
+  List,
+  TextField,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setPopup } from "~/libs/features/popup/popupSlice";
-import { updateReportStatus, getUserApi } from "./service";
+import {
+  updateReportStatus,
+  getUserApi,
+  getReport,
+  createComment,
+} from "./service";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import TaskIcon from "@mui/icons-material/Task";
 
@@ -31,10 +40,13 @@ export default function ReportDetails() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [role, setRole] = useState(null);
+  const [userId, setUserId] = useState(null);
   const { state } = useLocation();
   const { report } = state || {};
   const [isInProgress, setIsInProgress] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [commentContent, setCommentContent] = useState("");
+  const [comments, setComments] = useState([]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -42,6 +54,7 @@ export default function ReportDetails() {
         const response = await getUserApi();
         if (response.success && response.user) {
           setRole(response.user.role);
+          setUserId(response.user.id);
         } else {
           dispatch(
             setPopup({ type: "error", message: "Failed to fetch user data" })
@@ -59,12 +72,57 @@ export default function ReportDetails() {
 
   useEffect(() => {
     if (!report) {
-    } else {
-      if (report.status === "InProgress") {
-        setIsInProgress(false);
+      return;
+    }
+    if (report.status === "InProgress") {
+      setIsInProgress(true);
+    }
+
+    const fetchComments = async () => {
+      const response = await getReport(report.id);
+      if (response.success && Array.isArray(response.data.comments)) {
+        setComments(response.data.comments);
+      } else {
+        dispatch(
+          setPopup({ type: "error", message: "Failed to fetch comments" })
+        );
+      }
+    };
+
+    fetchComments();
+  }, [report]);
+
+  const handleCommentSubmit = async () => {
+    if (commentContent.trim()) {
+      try {
+        if (!userId) {
+          dispatch(setPopup({ type: "error", message: "User ID not found" }));
+          return;
+        }
+
+        const response = await createComment(report.id, commentContent, userId);
+
+        if (response.success) {
+          setComments((prevComments) => [...prevComments, response.data]);
+          setCommentContent("");
+        } else {
+          dispatch(
+            setPopup({
+              type: "error",
+              message: response.message || "Failed to submit comment",
+            })
+          );
+        }
+      } catch (error) {
+        dispatch(
+          setPopup({
+            type: "error",
+            message: error.message || "Error submitting comment",
+          })
+        );
       }
     }
-  }, [report]);
+  };
 
   const handleStatusChange = () => {
     if (report && report.status === "Pending") {
@@ -83,7 +141,7 @@ export default function ReportDetails() {
       try {
         const response = await updateReportStatus(report.id, 1);
         if (response && response.success) {
-          navigate("/create-task", { state: { reportId: report.id } });
+          navigate(`/create-task?reportId=${report.id}`);
         } else {
           dispatch(
             setPopup({
@@ -218,6 +276,7 @@ export default function ReportDetails() {
             </StyledButton>
           </Grid>
         )}
+
         <Grid item xs={12}>
           <StyledButton
             variant="outlined"
@@ -230,6 +289,60 @@ export default function ReportDetails() {
           </StyledButton>
         </Grid>
       </Grid>
+      {/* Comments Section */}
+      <Grid item xs={12}>
+        <Typography variant="h6" gutterBottom>
+          Comments
+        </Typography>
+        <List>
+          {Array.isArray(comments) && comments.length > 0 ? (
+            comments.map((comment, index) => (
+              <ListItem key={index}>
+                <ListItemText
+                  primary={`${comment.userFullName}: ${comment.content}`}
+                  secondary={`Posted on: ${new Date(
+                    comment.creationTime
+                  ).toLocaleString()}`}
+                />
+              </ListItem>
+            ))
+          ) : (
+            <Typography variant="body2" color="textSecondary">
+              No comments yet.
+            </Typography>
+          )}
+        </List>
+      </Grid>
+
+      {/* Comments and Add Comment Section */}
+      <StyledPaper elevation={8} sx={{ mt: 4 }}>
+        <Grid container spacing={3}>
+          {/* Add Comment Section */}
+          <Grid item xs={12}>
+            <Typography variant="h6" gutterBottom>
+              Add a Comment
+            </Typography>
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="Write your comment here..."
+              value={commentContent}
+              onChange={(e) => setCommentContent(e.target.value)}
+              multiline
+              rows={3}
+              sx={{ mb: 2 }}
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleCommentSubmit}
+              disabled={!commentContent.trim()}
+            >
+              Submit
+            </Button>
+          </Grid>
+        </Grid>
+      </StyledPaper>
     </StyledPaper>
   );
 }
