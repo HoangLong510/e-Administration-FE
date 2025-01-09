@@ -403,6 +403,15 @@ const Schedule = () => {
                       fontSize: 17,
                     }}
                   >
+                    Class
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      fontWeight: "bold",
+                      textAlign: "center",
+                      fontSize: 17,
+                    }}
+                  >
                     Date
                   </TableCell>
                   <TableCell
@@ -453,6 +462,9 @@ const Schedule = () => {
                       {scheduleItem.lab}
                     </TableCell>
                     <TableCell sx={{ textAlign: "center", fontSize: 17 }}>
+                      {scheduleItem.class}
+                    </TableCell>
+                    <TableCell sx={{ textAlign: "center", fontSize: 17 }}>
                       {new Date(scheduleItem.startTime).toLocaleDateString()}
                     </TableCell>
                     <TableCell sx={{ textAlign: "center", fontSize: 17 }}>
@@ -475,13 +487,6 @@ const Schedule = () => {
               </TableBody>
             </Table>
           </TableContainer>
-          {/* Download button */}
-          <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
-            <Button variant="contained" color="primary">
-              <Print sx={{ mr: 1 }} />
-              Download Timetable
-            </Button>
-          </Box>
         </Box>
       )}
 
