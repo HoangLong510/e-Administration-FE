@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Box,
+  Grid,
   Typography,
   Table,
   TableBody,
@@ -135,9 +136,11 @@ export default function ScheduleFull() {
       console.error("Week is not a string", week);
       return [];
     }
+
     const [startRange, endRange] = week.split("-");
     const [startDay, startMonth] = startRange.split("/");
     const [endDay, endMonth] = endRange.split("/");
+
     const currentYear = new Date().getFullYear();
     const startDate = new Date(
       Date.UTC(currentYear, parseInt(startMonth) - 1, parseInt(startDay))
@@ -146,6 +149,10 @@ export default function ScheduleFull() {
       Date.UTC(currentYear, parseInt(endMonth) - 1, parseInt(endDay))
     );
 
+    const diffToSunday = startDate.getDay();
+    const adjustedStartDate = new Date(startDate);
+    adjustedStartDate.setDate(startDate.getDate() - diffToSunday);
+
     const formatDate = (date) => {
       const day = String(date.getDate()).padStart(2, "0");
       const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -153,19 +160,22 @@ export default function ScheduleFull() {
     };
 
     const days = [];
-    let currentDate = startDate;
+    let currentDate = adjustedStartDate;
 
-    while (currentDate <= endDate) {
+    for (let i = 0; i < 7; i++) {
+      if (currentDate > endDate) break;
+
       days.push({
         date: formatDate(currentDate),
         dayOfWeek: currentDate.toLocaleString("en-us", { weekday: "long" }),
-        week: `${formatDate(startDate)}-${formatDate(endDate)}`,
+        week: `${formatDate(adjustedStartDate)}-${formatDate(endDate)}`,
       });
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
     return days;
   };
+
   const [scheduleData, setScheduleData] = useState({});
 
   const handleGetAllSchedule = async () => {
@@ -173,8 +183,7 @@ export default function ScheduleFull() {
       const res = await GetAllScheduleAPI();
       const formattedData = await formatScheduleData(res || [], year, week);
       setScheduleData(formattedData);
-    } catch (err) {
-    }
+    } catch (err) {}
   };
   useEffect(() => {
     handleGetAllSchedule();
@@ -208,7 +217,7 @@ export default function ScheduleFull() {
 
         const startTime = new Date(schedule?.startTime);
         const endTime = new Date(schedule?.endTime);
-        const dayKey = startTime.toISOString().split("T")[0]; // YYYY-MM-DD format
+        const dayKey = startTime.toISOString().split("T")[0];
         if (startTime >= startOfWeek && endTime <= endOfWeek) {
           if (!groupedSchedules[dayKey]) {
             groupedSchedules[dayKey] = [];
@@ -283,70 +292,73 @@ export default function ScheduleFull() {
     <>
       <Box sx={{ mt: 3 }}>
         <>
-          {/* Box Chức Năng */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-              <Select
-                value={year}
-                onChange={handleYearChange}
-                displayEmpty
-                inputProps={{ "aria-label": "Year" }}
-              >
-                {years.map((yearOption) => (
-                  <MenuItem key={yearOption} value={yearOption}>
-                    {yearOption}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-              <Select
-                value={week}
-                onChange={handleWeekChange}
-                displayEmpty
-                inputProps={{ "aria-label": "Week" }}
-              >
-                {weeks.map((weekOption) => (
-                  <MenuItem key={weekOption} value={weekOption}>
-                    {weekOption}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+          {/* Toolbar */}
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={7} md={5}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <FormControl size="small" sx={{ minWidth: 120 }}>
+                  <Select
+                    value={year}
+                    onChange={handleYearChange}
+                    displayEmpty
+                    inputProps={{ "aria-label": "Year" }}
+                  >
+                    {years.slice(0, 10).map((yearOption) => (
+                      <MenuItem key={yearOption} value={yearOption}>
+                        {yearOption}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl size="small" sx={{ minWidth: 120 }}>
+                  <Select
+                    value={week}
+                    onChange={handleWeekChange}
+                    displayEmpty
+                    inputProps={{ "aria-label": "Week" }}
+                  >
+                    {weeks.slice(0, 10).map((weekOption) => (
+                      <MenuItem key={weekOption} value={weekOption}>
+                        {weekOption}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
 
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <IconButton
-                onClick={handlePrevWeek}
-                color="primary"
-                aria-label="previous week"
-                disabled={!canGoPrevWeek}
-              >
-                <ArrowLeft />
-              </IconButton>
-              <Button
-                onClick={handleCurrentWeek}
-                variant="outlined"
-                size="small"
-                startIcon={<LayoutGrid />}
-              >
-                Current
-              </Button>
-              <IconButton
-                onClick={handleNextWeek}
-                color="primary"
-                aria-label="next week"
-                disabled={!canGoNextWeek}
-              >
-                <ArrowRight />
-              </IconButton>
-            </Box>
-          </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <IconButton
+                    onClick={handlePrevWeek}
+                    color="primary"
+                    aria-label="previous week"
+                    disabled={!canGoPrevWeek}
+                  >
+                    <ArrowLeft />
+                  </IconButton>
+                  <Button
+                    onClick={handleCurrentWeek}
+                    variant="outlined"
+                    size="small"
+                    startIcon={<LayoutGrid />}
+                  >
+                    Current
+                  </Button>
+                  <IconButton
+                    onClick={handleNextWeek}
+                    color="primary"
+                    aria-label="next week"
+                    disabled={!canGoNextWeek}
+                  >
+                    <ArrowRight />
+                  </IconButton>
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
           <TableContainer component={Paper} sx={{ mt: 2 }}>
             <Table>
               <TableHead>
                 <TableRow>
                   <TableCell
-                    align="center"
                     sx={{
                       fontWeight: "bold",
                       fontSize: 17,
@@ -355,6 +367,7 @@ export default function ScheduleFull() {
                       border: "1px solid #000",
                       padding: "12px",
                       borderRadius: "4px",
+                      textAlign: "center", // Align table header text to the center
                     }}
                   >
                     Slot
@@ -362,13 +375,13 @@ export default function ScheduleFull() {
                   {daysOfWeek.map((day) => (
                     <TableCell
                       key={day.date}
-                      align="center"
                       sx={{
                         backgroundColor: "primary.main",
                         fontSize: 17,
                         color: "#fff",
                         border: "1px solid #000",
                         padding: "16px",
+                        textAlign: "center", // Align date header text to the center
                       }}
                     >
                       {day.dayOfWeek}
@@ -383,7 +396,6 @@ export default function ScheduleFull() {
                 {Array.from({ length: 2 }).map((_, slotIndex) => (
                   <TableRow key={`slot-${slotIndex}`}>
                     <TableCell
-                      align="center"
                       sx={{
                         fontSize: 17,
                         minWidth: 100,
@@ -392,6 +404,7 @@ export default function ScheduleFull() {
                         fontWeight: "bold",
                         backgroundColor: "primary.main",
                         color: "#fff",
+                        textAlign: "center", // Align slot label text to the center
                       }}
                     >
                       Slot {slotIndex + 1}
@@ -413,7 +426,6 @@ export default function ScheduleFull() {
                       return (
                         <TableCell
                           key={day.date}
-                          align="center"
                           sx={{
                             minWidth: 190,
                             height: 150,
@@ -424,64 +436,77 @@ export default function ScheduleFull() {
                               cursor: "pointer",
                             },
                             backgroundColor: "#fafafa",
+                            textAlign: "left", // Align content inside the cell to the left
                           }}
                         >
                           <Box sx={{ p: 1, backgroundColor: "#f0f0f0" }}>
                             {slotData ? (
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  alignItems: "flex-start",
-                                }}
+                              <Grid
+                                container
+                                direction="column"
+                                alignItems="flex-start"
+                                spacing={1}
                               >
-                                <Typography
-                                  variant="body2"
-                                  sx={{ fontSize: 16, mb: 1 }}
-                                >
-                                  <strong>Course:</strong> {slotData.course}
-                                </Typography>
-                                <Typography
-                                  variant="body2"
-                                  sx={{ fontSize: 16, mb: 1 }}
-                                >
-                                  <strong>Lab:</strong> {slotData.lab}
-                                </Typography>
-                                <Typography
-                                  variant="body2"
-                                  sx={{ fontSize: 16, mb: 1 }}
-                                >
-                                  <strong>Lecturer:</strong> {slotData.fullname}
-                                </Typography>
-                                <Typography
-                                  variant="body2"
-                                  sx={{ fontSize: 16, mb: 1 }}
-                                >
-                                  <strong>Time:</strong>{" "}
-                                  {new Date(
-                                    slotData.startTime
-                                  ).toLocaleTimeString([], {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}{" "}
-                                  -{" "}
-                                  {new Date(
-                                    slotData.endTime
-                                  ).toLocaleTimeString([], {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </Typography>
-                                <Typography
-                                  variant="body2"
-                                  sx={{
-                                    fontSize: 16,
-                                    color: getStatusColor(slotData.status),
-                                  }}
-                                >
-                                  <strong>Status:</strong> {slotData.status}
-                                </Typography>
-                              </div>
+                                <Grid item sx={{ minWidth: "250px" }}>
+                                  <Typography
+                                    variant="body2"
+                                    sx={{ fontSize: 16 }}
+                                  >
+                                    <strong>Course:</strong> {slotData.course}
+                                  </Typography>
+                                </Grid>
+                                <Grid item sx={{ minWidth: "250px" }}>
+                                  <Typography
+                                    variant="body2"
+                                    sx={{ fontSize: 16 }}
+                                  >
+                                    <strong>Lab:</strong> {slotData.lab}
+                                  </Typography>
+                                </Grid>
+                                {user.data.role === "Student" && (
+                                  <Grid item sx={{ minWidth: "250px" }}>
+                                    <Typography
+                                      variant="body2"
+                                      sx={{ fontSize: 16 }}
+                                    >
+                                      <strong>Lecturer:</strong>{" "}
+                                      {slotData.fullname}
+                                    </Typography>
+                                  </Grid>
+                                )}
+                                <Grid item sx={{ minWidth: "250px" }}>
+                                  <Typography
+                                    variant="body2"
+                                    sx={{ fontSize: 16 }}
+                                  >
+                                    <strong>Time:</strong>{" "}
+                                    {new Date(
+                                      slotData.startTime
+                                    ).toLocaleTimeString([], {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}{" "}
+                                    -{" "}
+                                    {new Date(
+                                      slotData.endTime
+                                    ).toLocaleTimeString([], {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </Typography>
+                                </Grid>
+                                <Grid item sx={{ minWidth: "250px" }}>
+                                  <Typography
+                                    variant="body2"
+                                    sx={{
+                                      fontSize: 16,
+                                      color: getStatusColor(slotData.status),
+                                    }}
+                                  >
+                                    <strong>Status:</strong> {slotData.status}
+                                  </Typography>
+                                </Grid>
+                              </Grid>
                             ) : (
                               "-"
                             )}
@@ -494,7 +519,8 @@ export default function ScheduleFull() {
               </TableBody>
             </Table>
           </TableContainer>
-          {/* Ghi chú */}
+
+          {/* Notes */}
           <Box sx={{ mt: 2 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
               More note:
@@ -513,6 +539,7 @@ export default function ScheduleFull() {
               );
             })}
           </Box>
+
           {/* Download button */}
           <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
             <Button variant="contained" color="primary" onClick={handleExport}>
