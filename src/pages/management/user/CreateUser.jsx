@@ -68,7 +68,9 @@ export default function CreateUser() {
         address: "",
         dateOfBirth: "",
         gender: "Other",
-        role: ""
+        role: "",
+        classId: null,
+        departmentId: null
     })
 
     const [touched, setTouched] = useState({
@@ -233,8 +235,8 @@ export default function CreateUser() {
             <Box sx={{
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: {xs: 'flex-start', md: 'center'},
-                flexDirection: {xs: 'column', md: 'row'}
+                alignItems: { xs: 'flex-start', md: 'center' },
+                flexDirection: { xs: 'column', md: 'row' }
             }}>
                 <Box>
                     <Typography sx={{
@@ -245,7 +247,7 @@ export default function CreateUser() {
                         Create user
                     </Typography>
                     <Typography sx={{
-                        mb: {xs: '10px', md: '40px'},
+                        mb: { xs: '10px', md: '40px' },
                         fontSize: '14px',
                         color: '#666'
                     }}>
@@ -379,7 +381,11 @@ export default function CreateUser() {
                                 labelId="role-label"
                                 name="role"
                                 value={formData.role}
-                                onChange={handleInputChange}
+                                onChange={(e) => {
+									formData.classId = null
+									formData.departmentId = null
+									handleInputChange(e)
+								}}
                                 onBlur={handleBlur}
                                 label="Role"
                             >
@@ -393,6 +399,44 @@ export default function CreateUser() {
                             {touched.role && errors.role && <FormHelperText>{errors.role}</FormHelperText>}
                         </FormControl>
                     </Grid>
+                    {formData.role === 'Student' && (
+                        <Grid item xs={12}>
+                            <FormControl fullWidth>
+                                <InputLabel id="class-label">Select class</InputLabel>
+                                <Select
+                                    labelId="class-label"
+                                    name="classId"
+                                    value={formData.classId}
+                                    onChange={handleInputChange}
+                                    onBlur={handleBlur}
+                                    label="Select class"
+                                >
+                                    <MenuItem value={null}>--- select class ---</MenuItem>
+                                    <MenuItem value={1}>Class1</MenuItem>
+                                    <MenuItem value={2}>Class2</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                    )}
+                    {formData.role && formData.role !== 'Admin' && formData.role !== 'Student' && (
+                        <Grid item xs={12}>
+                            <FormControl fullWidth>
+                                <InputLabel id="department-label">Select department</InputLabel>
+                                <Select
+                                    labelId="department-label"
+                                    name="departmentId"
+                                    value={formData.departmentId}
+                                    onChange={handleInputChange}
+                                    onBlur={handleBlur}
+                                    label="Select department"
+                                >
+                                    <MenuItem value={null}>--- select department ---</MenuItem>
+                                    <MenuItem value={1}>department1</MenuItem>
+                                    <MenuItem value={2}>department2</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+                    )}
                     <Grid item xs={12}>
                         <Button
                             type="submit"

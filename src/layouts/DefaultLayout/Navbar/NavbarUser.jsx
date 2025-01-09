@@ -113,7 +113,7 @@ export default function NavbarUser() {
                 : "/default-avatar.png"
             }
           />
-          <Typography sx={{ ml: 1, width: "150px" }}>
+          <Typography sx={{ ml: 1, minWidth: "150px" }}>
             {user.data.fullName}
           </Typography>
         </MenuItem>
