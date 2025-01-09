@@ -69,6 +69,8 @@ export default function EditUser() {
 		dateOfBirth: "",
 		gender: "Other",
 		role: "",
+		classId: null,
+		departmentId: null,
 		isActive: true,
 	})
 
@@ -359,7 +361,11 @@ export default function EditUser() {
 								labelId="role-label"
 								name="role"
 								value={formData.role}
-								onChange={handleInputChange}
+								onChange={(e) => {
+									formData.classId = null
+									formData.departmentId = null
+									handleInputChange(e)
+								}}
 								onBlur={handleBlur}
 								label="Role"
 							>
@@ -373,8 +379,46 @@ export default function EditUser() {
 							{touched.role && errors.role && <FormHelperText>{errors.role}</FormHelperText>}
 						</FormControl>
 					</Grid>
-					<Grid item xs={12}>
-						<FormControl fullWidth error={touched.role && !!errors.role}>
+					{formData.role === 'Student' && (
+						<Grid item xs={12} sm={6}>
+							<FormControl fullWidth>
+								<InputLabel id="class-label">Select class</InputLabel>
+								<Select
+									labelId="class-label"
+									name="classId"
+									value={formData.classId}
+									onChange={handleInputChange}
+									onBlur={handleBlur}
+									label="Select class"
+								>
+									<MenuItem value={null}>--- select class ---</MenuItem>
+									<MenuItem value={1}>Class1</MenuItem>
+									<MenuItem value={2}>Class2</MenuItem>
+								</Select>
+							</FormControl>
+						</Grid>
+					)}
+					{formData.role && formData.role !== 'Admin' && formData.role !== 'Student' && (
+						<Grid item xs={12} sm={6}>
+							<FormControl fullWidth>
+								<InputLabel id="department-label">Select department</InputLabel>
+								<Select
+									labelId="department-label"
+									name="departmentId"
+									value={formData.departmentId}
+									onChange={handleInputChange}
+									onBlur={handleBlur}
+									label="Select department"
+								>
+									<MenuItem value={null}>--- select department ---</MenuItem>
+									<MenuItem value={1}>department1</MenuItem>
+									<MenuItem value={2}>department2</MenuItem>
+								</Select>
+							</FormControl>
+						</Grid>
+					)}
+					<Grid item xs={12} sm={formData.role !== 'Admin' ? 6 : 12}>
+						<FormControl fullWidth>
 							<InputLabel id="status-label">Status</InputLabel>
 							<Select
 								labelId="status-label"

@@ -78,7 +78,7 @@ export default function NavbarUser() {
             >
                 <MenuItem component={Link} to='/profile' onClick={handleClose} sx={{ height: '45px' }}>
                     <Avatar sx={{ width: '25px', height: '25px' }} src={user.data.avatar} />
-                    <Typography sx={{ ml: 1, width: '150px' }}>
+                    <Typography sx={{ ml: 1, minWidth: '150px' }}>
                         {user.data.fullName}
                     </Typography>
                 </MenuItem>
