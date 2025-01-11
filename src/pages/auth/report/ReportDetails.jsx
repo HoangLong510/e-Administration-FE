@@ -14,7 +14,7 @@ import {
   TextField,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setPopup } from "~/libs/features/popup/popupSlice";
 import {
@@ -39,10 +39,11 @@ const StyledButton = styled(Button)(({ theme }) => ({
 export default function ReportDetails() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [error, setError] = useState(null);
+  const { id } = useParams();
   const [role, setRole] = useState(null);
   const [userId, setUserId] = useState(null);
-  const { state } = useLocation();
-  const { report } = state || {};
+  const [report, setReport] = useState(null);
   const [isInProgress, setIsInProgress] = useState(false);
   const [loading, setLoading] = useState(false);
   const [commentContent, setCommentContent] = useState("");
@@ -67,14 +68,48 @@ export default function ReportDetails() {
       }
     };
 
+    const fetchReport = async () => {
+      try {
+        setLoading(true);
+        const response = await getReport(id); // Gọi API với `id`
+        console.log(response); // Kiểm tra response từ API
+        if (response?.success) {
+          setReport(response.data);
+          setComments(response.data.comments || []); // Cập nhật comments nếu có
+        } else {
+          setError("Không tìm thấy báo cáo.");
+        }
+      } catch (err) {
+        setError("Đã xảy ra lỗi khi tải dữ liệu báo cáo.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchReport();
+    }
     fetchUser();
-  }, [dispatch]);
+  }, [id]);
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 0:
+        return "Pending";
+      case 1:
+        return "InProgress";
+      case 2:
+        return "Completed";
+      default:
+        return "Unknown";
+    }
+  };
 
   useEffect(() => {
     if (!report) {
       return;
     }
-    if (report.status === "InProgress") {
+    if (report.status === 1) {
       setIsInProgress(true);
     }
 
@@ -125,8 +160,7 @@ export default function ReportDetails() {
   };
 
   const handleStatusChange = () => {
-    if (report && report.status === "Pending") {
-      report.status = "InProgress";
+    if (report && report.status === 0) {
       setIsInProgress(true);
     }
   };
@@ -136,10 +170,10 @@ export default function ReportDetails() {
   };
 
   const handleCreateTask = async () => {
-    if (report && isInProgress) {
+    if (report) {
       setLoading(true);
       try {
-        if (report.status !== 1) {
+        if (report.status !== 1 && isInProgress) {
           const response = await updateReportStatus(report.id, 1);
           if (response && response.success) {
             navigate(`/create-task?reportId=${report.id}`);
@@ -191,8 +225,14 @@ export default function ReportDetails() {
               Report Details
             </Typography>
             <Chip
-              label={report.status}
-              color={report.status === "Pending" ? "warning" : "success"}
+              label={getStatusText(report.status)}
+              color={
+                report.status === 0
+                  ? "warning"
+                  : report.status === 1
+                  ? "primary"
+                  : "success"
+              }
             />
           </Box>
         </Grid>
@@ -282,7 +322,7 @@ export default function ReportDetails() {
               Back to Reports List
             </StyledButton>
 
-            {role === "Admin" && report.status === "Pending" && (
+            {role === "Admin" && report.status === 0 && (
               <StyledButton
                 variant="contained"
                 onClick={handleStatusChange}

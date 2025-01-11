@@ -114,7 +114,7 @@ export default function ListReport() {
   };
 
   const handleViewClick = (report) => {
-    navigate(`/report-details/${report.id}`, { state: { report } });
+    navigate(`/report-details/${report.id}`);
   };
 
   return (
