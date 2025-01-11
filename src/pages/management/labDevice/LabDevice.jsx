@@ -18,49 +18,36 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveFromQueueIcon from '@mui/icons-material/RemoveFromQueue';
-// import { fetchLabDevicesApi } from './service';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'; // Thêm dòng này
+import { fetchLabDevicesApi, removeDevicesFromLabApi } from './service';
 import { useDispatch } from 'react-redux';
 import { setPopup } from '~/libs/features/popup/popupSlice';
 import { clearLoading, setLoading } from '~/libs/features/loading/loadingSlice';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 
 export default function LabDevices({ labName }) {
     const dispatch = useDispatch();
-    const [devices, setDevices] = useState([
-        {
-            name: 'Device 1',
-            description: 'This is device 1',
-            type: 'Hardware',
-        },
-        {
-            name: 'Device 2',
-            description: 'This is device 2',
-            type: 'Software',
-            licenseExpire: '2023-12-31',
-        },
-        {
-            name: 'Device 3',
-            description: 'This is device 3',
-            type: 'Hardware',
-        },
-    ]);
+    const [devices, setDevices] = useState([]);
     const [selectedDevices, setSelectedDevices] = useState([]);
     const [searchValue, setSearchValue] = useState('');
 
     const handleToggleAll = (event) => {
         if (event.target.checked) {
-            setSelectedDevices(devices.map((device) => device.name));
+            setSelectedDevices(devices.map((device) => device.id));
         } else {
             setSelectedDevices([]);
         }
     };
 
-    const handleToggle = (name) => {
-        const currentIndex = selectedDevices.indexOf(name);
+    const handleSearchChange = (event) => { setSearchValue(event.target.value); };
+    const handleSearchKeyDown = (event) => { if (event.key === 'Enter') { handlefetchLabDevices(); } };
+
+    const handleToggle = (id) => {
+        const currentIndex = selectedDevices.indexOf(id);
         const newSelected = [...selectedDevices];
 
         if (currentIndex === -1) {
-            newSelected.push(name);
+            newSelected.push(id);
         } else {
             newSelected.splice(currentIndex, 1);
         }
@@ -68,37 +55,13 @@ export default function LabDevices({ labName }) {
         setSelectedDevices(newSelected);
     };
 
-    const handlefetchLabDevices = async () => {
-        const data = {
-            searchValue,
-        };
-        dispatch(setLoading());
-        // const res = await fetchLabDevicesApi(data);
-        dispatch(clearLoading());
-        // Simulate fetching lab devices with seeded data
-        const res = {
-            success: true,
-            devices: [
-                {
-                    name: 'Device 1',
-                    description: 'This is device 1',
-                    type: 'Hardware',
-                },
-                {
-                    name: 'Device 2',
-                    description: 'This is device 2',
-                    type: 'Software',
-                    licenseExpire: '2023-12-31',
-                },
-                {
-                    name: 'Device 3',
-                    description: 'This is device 3',
-                    type: 'Hardware',
-                },
-            ],
-        };
+    const { labId } = useParams();
 
-        console.log(res);
+    const handlefetchLabDevices = async () => {
+        dispatch(setLoading());
+        const res = await fetchLabDevicesApi(labId, searchValue);
+        dispatch(clearLoading());
+
         if (res.success) {
             setDevices(res.devices);
         } else {
@@ -110,9 +73,34 @@ export default function LabDevices({ labName }) {
         }
     };
 
+    const handleRemoveDevicesFromLab = async () => {
+        const data = {
+            deviceIds: selectedDevices,
+        };
+        dispatch(setLoading());
+        const res = await removeDevicesFromLabApi(data);
+        dispatch(clearLoading());
+
+        if (res.success) {
+            const dataPopup = {
+                type: 'success',
+                message: "Devices removed from lab successfully",
+            };
+            dispatch(setPopup(dataPopup));
+            setSelectedDevices([]);
+            handlefetchLabDevices();
+        } else {
+            const dataPopup = {
+                type: 'error',
+                message: res.message,
+            };
+            dispatch(setPopup(dataPopup));
+        }
+    };
+
     useEffect(() => {
         handlefetchLabDevices();
-    }, []);
+    }, [labId, searchValue]);
 
     return (
         <Box sx={{
@@ -136,14 +124,15 @@ export default function LabDevices({ labName }) {
                 </Typography>
                 <Grid container spacing={3} sx={{ mb: 3, mt: 2 }}>
                     <Grid item xs={12} sm={6} md={5}>
-                        <TextField 
-                            fullWidth 
+                        <TextField
+                            fullWidth
                             size='small'
                             id="outlined-basic"
                             label="Search"
                             variant="outlined"
                             value={searchValue}
-                            onChange={(e) => setSearchValue(e.target.value)}
+                            onChange={handleSearchChange}
+                            onKeyDown={handleSearchKeyDown}
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
@@ -154,7 +143,7 @@ export default function LabDevices({ labName }) {
                         />
                     </Grid>
                     <Grid item xs={12} sm={6} md={7} sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                        <Button component={Link} to='/management/lab/add-device'
+                        <Button component={Link} to={`/management/labdevice/add-to-lab/${labId}`}
                             variant="contained"
                             color="primary"
                             startIcon={<AddIcon />}
@@ -177,8 +166,24 @@ export default function LabDevices({ labName }) {
                                 height: '100%',
                                 padding: '10px 20px',
                             }}
+                            onClick={handleRemoveDevicesFromLab}
                         >
                             {`Remove ${selectedDevices.length > 0 ? `(${selectedDevices.length})` : ''}`}
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            startIcon={<ArrowBackIcon />}
+                            sx={{
+                                borderRadius: '20px',
+                                textTransform: 'none',
+                                height: '100%',
+                                padding: '10px 20px',
+                            }}
+                            component={Link}
+                            to={`/management/lab`}
+                        >
+                            Back to Lab
                         </Button>
                     </Grid>
                 </Grid>
@@ -204,8 +209,8 @@ export default function LabDevices({ labName }) {
                                     <TableCell padding="checkbox">
                                         <Checkbox
                                             color="primary"
-                                            checked={selectedDevices.indexOf(device.name) !== -1}
-                                            onChange={() => handleToggle(device.name)}
+                                            checked={selectedDevices.indexOf(device.id) !== -1}
+                                            onChange={() => handleToggle(device.id)}
                                         />
                                     </TableCell>
                                     <TableCell>

@@ -27,6 +27,7 @@ import {
   Tab,
   InputAdornment,
   TablePagination,
+  Menu
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -35,12 +36,16 @@ import {
   CheckCircle,
   Error,
   Search as SearchIcon,
+  MoreVert as MoreVertIcon,
+  PriorityHigh as PriorityHighIcon
 } from "@mui/icons-material";
 
-import { getAllLabs, createLab, updateLab, deleteLab } from "./service";
+import { fetchLabsApi, createLabApi, updateLabApi } from "./service";
 import { useDispatch } from "react-redux";
 import { setPopup } from "~/libs/features/popup/popupSlice";
 import { clearLoading, setLoading } from "~/libs/features/loading/loadingSlice";
+import { Link, useParams } from "react-router-dom";
+import DisableLab from './DisableLab';
 
 function LabManager() {
   const [labs, setLabs] = useState([]);
@@ -53,12 +58,25 @@ function LabManager() {
   const [newStatus, setNewStatus] = useState(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [disableId, setDisableId] = useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [menuLabId, setMenuLabId] = useState(null);
   const dispatch = useDispatch();
+
+  const handleMenuOpen = (event, id) => {
+    setAnchorEl(event.currentTarget);
+    setMenuLabId(id);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setMenuLabId(null);
+  };
 
   const fetchLabs = useCallback(async () => {
     try {
       dispatch(setLoading());
-      const res = await getAllLabs();
+      const res = await fetchLabsApi();
       setLabs(res.data || []);
     } catch (error) {
       console.error("Error fetching labs:", error);
@@ -70,9 +88,7 @@ function LabManager() {
 
   useEffect(() => {
     const filtered = labs.filter((lab) => {
-      const matchesSearch = lab.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
+      const matchesSearch = lab.name.toLowerCase().includes(searchQuery.toLowerCase());
       if (tabValue === 1) return matchesSearch && lab.status === true;
       if (tabValue === 2) return matchesSearch && lab.status === false;
       return matchesSearch;
@@ -88,7 +104,7 @@ function LabManager() {
     e.preventDefault();
     try {
       dispatch(setLoading());
-      const res = await createLab({ name: newName, status: newStatus });
+      const res = await createLabApi({ name: newName, status: newStatus });
       if (res.success) {
         dispatch(setPopup({ type: "success", message: res.message }));
         fetchLabs();
@@ -108,7 +124,7 @@ function LabManager() {
   const handleEditLab = async () => {
     try {
       dispatch(setLoading());
-      await updateLab(editingLab.id, editingLab);
+      await updateLabApi(editingLab.id, editingLab);
       dispatch(setPopup({ type: "success", message: "Lab updated" }));
       fetchLabs();
       setIsDialogOpen(false);
@@ -121,27 +137,38 @@ function LabManager() {
     }
   };
 
-  const handleDeleteLab = async (id) => {
-    try {
-      dispatch(setLoading());
-      await deleteLab(id);
-      dispatch(setPopup({ type: "success", message: "Lab deleted" }));
-      fetchLabs();
-    } catch (error) {
-      console.error("Error deleting lab:", error);
-      dispatch(setPopup({ type: "error", message: "Failed to delete lab" }));
-    } finally {
-      dispatch(clearLoading());
-    }
-  };
+  
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
 
-  const handleEditClick = (lab) => {
+  const handleEditClick = (lab, event) => {
+    
     setEditingLab(lab);
     setIsDialogOpen(true);
+  };
+  const handleDisableLabClick = async (id) => {
+    try {
+      dispatch(setLoading());
+      const res = await disableLabApi(id);
+      if (res.success) {
+        dispatch(setPopup({ type: "success", message: "Lab disabled" }));
+        fetchLabs();  // Gọi lại hàm fetchLabs để làm mới bảng
+      } else {
+        dispatch(setPopup({ type: "error", message: res.message }));
+      }
+    } catch (error) {
+      console.error("Error disabling lab:", error);
+      dispatch(setPopup({ type: "error", message: "Failed to disable lab" }));
+    } finally {
+      dispatch(clearLoading());
+    }
+  };
+  
+  const handleDeleteClick = (id, event) => {
+    
+    handleDisableLabClick(id);
   };
 
   const handleDialogClose = () => {
@@ -150,7 +177,7 @@ function LabManager() {
   };
 
   const getStatusChipProps = (status) => ({
-    label: status ? "In Use" : "Under Maintenance",
+    label: status ? "Active" : "Disable",
     color: status ? "success" : "error",
     icon: status ? <CheckCircle /> : <Error />,
   });
@@ -163,7 +190,6 @@ function LabManager() {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
-
   return (
     <Container maxWidth="lg">
       <Box py={4}>
@@ -182,22 +208,26 @@ function LabManager() {
                   onChange={(e) => setNewName(e.target.value)}
                   required
                   fullWidth
+                  size="small"
                 />
               </Grid>
               <Grid item xs={12} sm={4}>
-                <FormControl fullWidth>
-                  <InputLabel>Status</InputLabel>
+                <FormControl fullWidth size="small">
+                  <InputLabel id="select-status">Status</InputLabel>
                   <Select
+                    labelId="select-status"
+                    label="Status"
                     value={newStatus}
                     onChange={(e) => setNewStatus(e.target.value)}
                   >
-                    <MenuItem value={true}>In Use</MenuItem>
-                    <MenuItem value={false}>Under Maintenance</MenuItem>
+                    <MenuItem value={true}>Active</MenuItem>
+                    <MenuItem value={false}>Disable</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12} sm={2} >
-                <Button sx={{ height: "100%"}}
+              <Grid item xs={12} sm={2}>
+                <Button
+                  sx={{ height: "40px" }}
                   type="submit"
                   variant="contained"
                   fullWidth
@@ -214,14 +244,8 @@ function LabManager() {
         <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}>
           <Tabs value={tabValue} onChange={handleTabChange}>
             <Tab label={`All (${labs.length})`} />
-            <Tab
-              label={`In Use (${labs.filter((lab) => lab.status).length})`}
-            />
-            <Tab
-              label={`Under Maintenance (${
-                labs.filter((lab) => !lab.status).length
-              })`}
-            />
+            <Tab label={`In Use (${labs.filter((lab) => lab.status).length})`} />
+            <Tab label={`Under Maintenance (${labs.filter((lab) => !lab.status).length})`} />
           </Tabs>
         </Box>
 
@@ -262,34 +286,42 @@ function LabManager() {
               {filteredLabs
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((lab) => (
-                  <TableRow key={lab.id}>
+                  <TableRow key={lab.id} sx={{ cursor: "default" }}>
                     <TableCell>{lab.name}</TableCell>
                     <TableCell align="center">
-                      <Chip
-                        {...getStatusChipProps(lab.status)}
-                        variant="outlined"
-                        size="small"
-                      />
+                      <Chip {...getStatusChipProps(lab.status)} variant="outlined" size="small" />
                     </TableCell>
                     <TableCell align="right">
                       <IconButton
-                        onClick={() => handleEditClick(lab)}
+                        onClick={(event) => handleMenuOpen(event, lab.id)}
                         color="primary"
                         size="small"
                       >
-                        <EditIcon />
+                        <MoreVertIcon />
                       </IconButton>
-                      <IconButton
-                        onClick={() => handleDeleteLab(lab.id)}
-                        color="error"
-                        size="small"
+                      <Menu
+                        anchorEl={anchorEl}
+                        keepMounted
+                        open={Boolean(anchorEl) && menuLabId === lab.id}
+                        onClose={handleMenuClose}
                       >
-                        <DeleteIcon />
-                      </IconButton>
+                        <MenuItem onClick={(event) => handleEditClick(lab, event)}>
+                          <EditIcon sx={{ mr: 1 }} /> Edit
+                        </MenuItem>
+                        {lab.status && (
+                          <MenuItem onClick={() => { setDisableId(lab.id); handleMenuClose(); }}>
+                          <DeleteIcon sx={{ mr: 1 }} /> Delete
+                      </MenuItem>
+                        )}
+                        <MenuItem component={Link} to={`/management/labdevice/${lab.id}`} onClick={handleMenuClose}>
+                          <PriorityHighIcon sx={{ mr: 1 }} /> Details
+                        </MenuItem>
+                      </Menu>
                     </TableCell>
                   </TableRow>
                 ))}
             </TableBody>
+
           </Table>
         </TableContainer>
 
@@ -318,18 +350,20 @@ function LabManager() {
                 fullWidth
                 margin="normal"
               />
-              <FormControl fullWidth margin="normal">
+              <FormControl fullWidth margin="normal" variant="outlined" size="small">
                 <InputLabel>Status</InputLabel>
                 <Select
                   value={editingLab.status}
                   onChange={(e) =>
                     setEditingLab({ ...editingLab, status: e.target.value })
                   }
+                  label="Status"
                 >
-                  <MenuItem value={true}>In Use</MenuItem>
-                  <MenuItem value={false}>Under Maintenance</MenuItem>
+                  <MenuItem value={true}>Active</MenuItem>
+                  <MenuItem value={false}>Disable</MenuItem>
                 </Select>
               </FormControl>
+
             </DialogContent>
             <DialogActions>
               <Button onClick={handleDialogClose}>Cancel</Button>
@@ -340,6 +374,7 @@ function LabManager() {
           </Dialog>
         )}
       </Box>
+      <DisableLab disableId={disableId} setDisableId={setDisableId} fetchLabs={fetchLabs} />
     </Container>
   );
 }

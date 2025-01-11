@@ -19,8 +19,9 @@ const adminMenuItems = [
         icon: FeedbackIcon
     },
     {
-        label: "Divices",
-        href: `/management/divice`,
+
+        label: "Devices",
+        href: `/management/devices`,
         icon: DevicesRoundedIcon
     },
     {
@@ -39,9 +40,14 @@ const adminMenuItems = [
         href: `/management/document`,
         icon: MenuBookIcon,
     },
-  { 
+    { 
         label: "Departments",
         href: `/management/department`,
+        icon: Diversity2Icon,
+    },
+    { 
+        label: "SoftWare",
+        href: `/management/software`,
         icon: Diversity2Icon,
     },
 ]
