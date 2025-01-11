@@ -78,3 +78,30 @@ export const updateReportStatus = async (reportId, status) => {
   }
 };
 
+export const createComment = async (reportId, commentContent , userId) => {
+  try {
+    const comment = { content: commentContent, userId: userId, reportId: reportId };
+
+    const res = await axios.post(`/report/${reportId}/comment`, comment, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    return res.data;
+  } catch (error) {
+    console.error("Error creating comment:", error);
+    return { success: false, message: error.response?.data?.message || "An error occurred" };
+  }
+};
+
+export const getReport = async (reportId) => {
+  try {
+    const res = await axios.get(`/report/${reportId}`, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching report:", error);
+    return { success: false, message: error.response?.data?.message || "An error occurred" };
+  }
+};

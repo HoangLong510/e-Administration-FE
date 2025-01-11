@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import {
   Box,
-  Typography,
+  TextField,
   Table,
   TableBody,
   TableCell,
@@ -17,23 +18,28 @@ import {
   Tabs,
   Tab,
 } from "@mui/material";
-import ArrowBackIos from "@mui/icons-material/ArrowBackIos";
-import ArrowForwardIos from "@mui/icons-material/ArrowForwardIos";
-import GridOn from "@mui/icons-material/GridOn";
+import { ArrowLeft, ArrowRight, LayoutGrid } from "lucide-react";
 import Print from "@mui/icons-material/Print";
-import ArrowCircleRightIcon from "@mui/icons-material/ArrowCircleRight";
-import { CheckCircle, Cancel, AccessTime } from "@mui/icons-material";
+import DeleteIcon from "@mui/icons-material/Delete";
 import Register from "./Register";
-import { GetAllScheduleAPI } from "./service";
-import { format, startOfWeek, endOfWeek } from "date-fns";
 import ScheduleFull from "./ScheduleFull";
+import { format } from "date-fns";
+import {
+  GetAllScheduleAPI,
+  DeleteScheduleAPI,
+  GetSchedulesByLabAPI,
+  GetScheduleByFullNameAPI,
+  GetScheduleByIdAPI,
+} from "./service";
 
 const Schedule = () => {
   const [years, setYears] = useState([]);
   const [year, setYear] = useState(new Date().getFullYear());
   const [weeks, setWeeks] = useState([]);
-  const [week, setWeek] = useState(startOfWeek(new Date()));
+  const [week, setWeek] = useState(0);
   const [tabValue, setTabValue] = useState(0);
+
+  const user = useSelector((state) => state.user.value);
   // Generate year options
   useEffect(() => {
     const currentYear = new Date().getFullYear();
@@ -45,15 +51,10 @@ const Schedule = () => {
   }, []);
   // Generate week options
   useEffect(() => {
-    const currentYear = new Date().getFullYear();
     const weekOptions = [];
     let startDate = new Date(year, 0, 1);
-    let endDate;
-    if (year === currentYear) {
-      endDate = new Date();
-    } else {
-      endDate = new Date(year, 11, 31);
-    }
+    const endDate = new Date(year, 11, 31);
+
     while (startDate <= endDate) {
       const weekStart = format(startDate, "dd/MM");
       const weekEnd = format(
@@ -63,192 +64,201 @@ const Schedule = () => {
       weekOptions.push(`${weekStart}-${weekEnd}`);
       startDate.setDate(startDate.getDate() + 7);
     }
+
     setWeeks(weekOptions);
   }, [year]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
-
   const handleWeekChange = (event) => {
-    setWeek(event.target.value); //dd/mm-dd/mm
+    setWeek(event.target.value);
   };
-
   const handleYearChange = (event) => {
     setYear(event.target.value);
+    setWeek();
   };
 
-  const handlePrevWeek = () => {
+  const handlePrevWeek = async () => {
     const currentWeekIndex = weeks.indexOf(week);
     if (currentWeekIndex > 0) {
       setWeek(weeks[currentWeekIndex - 1]);
     }
   };
-
-  const canGoNextWeek = weeks.indexOf(week) < weeks.length - 1;
+  const canGoPrevWeek = weeks.indexOf(week) > 0;
 
   const handleNextWeek = () => {
     const currentWeekIndex = weeks.indexOf(week);
-    if (canGoNextWeek) {
+    if (currentWeekIndex < weeks.length - 1) {
       setWeek(weeks[currentWeekIndex + 1]);
     }
   };
+  const canGoNextWeek = weeks.indexOf(week) < weeks.length - 1;
+  
   const handleCurrentWeek = () => {
-    //Show year in Dropdown year
     const currentYear = new Date().getFullYear();
     setYear(currentYear);
-    //Show week in Dropdown week
-    const currentWeek = new Date();
-    const formattedDate = format(currentWeek, "dd/MM");
+    const currentDay = new Date();
+    const formattedDate = format(currentDay, "dd/MM");
 
-    weeks.forEach((week) => {
-      const [Font, Back] = week.split("-");
-      const [startDay, startMonth] = Font.split("/");
-      const [endDay, endMonth] = Back.split("/");
-
-      const isLeapYear = (year) => {
-        return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-      };
-      if (!isLeapYear(currentYear)) {
-        if (parseInt(startMonth) >= 3) {
-        }
-      }
-
+    for (const week of weeks) {
+      const [startRange, endRange] = week.split("-");
+      const [startDay, startMonth] = startRange.split("/");
+      const [endDay, endMonth] = endRange.split("/");
       const startDate = new Date(
         Date.UTC(currentYear, parseInt(startMonth) - 1, parseInt(startDay))
       );
+
       const endDate = new Date(
-        Date.UTC(currentYear, parseInt(endMonth) - 1, parseInt(endDay))
+        Date.UTC(
+          parseInt(endMonth) < parseInt(startMonth)
+            ? currentYear + 1
+            : currentYear,
+          parseInt(endMonth) - 1,
+          parseInt(endDay)
+        )
       );
 
-      const [formattedDay, formattedMonth] = formattedDate.split("/");
+      const [currentDay, currentMonth] = formattedDate.split("/");
       const checkDate = new Date(
-        Date.UTC(
-          currentYear,
-          parseInt(formattedMonth) - 1,
-          parseInt(formattedDay)
-        )
+        Date.UTC(currentYear, parseInt(currentMonth) - 1, parseInt(currentDay))
       );
 
       if (checkDate >= startDate && checkDate <= endDate) {
         setWeek(week);
+        return;
       }
-    });
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "Absent":
-        return <Cancel sx={{ color: "red" }} />;
-      case "Attended":
-        return <CheckCircle sx={{ color: "green" }} />;
-      case "Pending":
-        return <AccessTime sx={{ color: "orange" }} />;
-      default:
-        return <Box sx={{ color: "black" }}></Box>;
     }
   };
-
+  useEffect(() => {
+    handleCurrentWeek()
+  }, []);
   const [scheduleData, setScheduleData] = useState([]);
 
   const handleGetAllSchedule = async () => {
     try {
       const res = await GetAllScheduleAPI();
-      const allSchedule = res?.allSchedule || [];
-      const filteredSchedules = [];
-      for (let i = 0; i < allSchedule.length; i++) {
-        const startTime = allSchedule[i]?.schedule?.startTime;
+      const formattedData = formatScheduleData(res || [], year, week);
+      setScheduleData(formattedData);
+    } catch (err) {
+      console.error("Error fetching all schedules:", err);
+    }
+  };
+
+  const formatScheduleData = async (schedules, year, week) => {
+    if (!schedules || !Array.isArray(schedules)) return [];
+
+    const filteredSchedules = [];
+
+    for (const schedule of schedules) {
+      const ID = schedule?.id;
+
+      try {
+        const ScheduleById = await GetScheduleByIdAPI(ID);
+        const fullname = ScheduleById?.fullName || "Unknown";
+        const updatedSchedule = {
+          ...schedule,
+          fullname,
+        };
+        const startTime = schedule?.startTime;
         const date = new Date(startTime);
         const day = date.getDate();
         const month = date.getMonth() + 1;
-        const [start, end] = week.split("-");
-        const [startDay, startMonth] = start.split("/").map(Number);
-        const [endDay, endMonth] = end.split("/").map(Number);
-        const isInWeek =
-          (month > startMonth || (month === startMonth && day >= startDay)) &&
-          (month < endMonth || (month === endMonth && day <= endDay));
-        if (isInWeek) {
-          filteredSchedules.push(allSchedule[i]);
-        }
-      }
-      setScheduleData(filteredSchedules);
-    } catch (err) {}
-  };
-  useEffect(() => {
-    handleGetAllSchedule();
-  }, [year, week]);
+        const yeardata = date.getFullYear();
 
-  const notes = [
-    {
-      status: "Pending",
-      description: "Meeting with team",
-      color: "orange",
-    },
-    {
-      status: "Completed",
-      description: "Submitted project report",
-      color: "green",
-    },
-    {
-      status: "Cancelled",
-      description: "Weekly sync-up",
-      color: "red",
-    },
-  ];
+        if (yeardata === year) {
+          const [start, end] = week ? week.split("-") : [];
+          if (!start || !end) continue;
+
+          const [startDay, startMonth] = start.split("/").map(Number);
+          const [endDay, endMonth] = end.split("/").map(Number);
+
+          const isInWeek =
+            (month > startMonth || (month === startMonth && day >= startDay)) &&
+            (month < endMonth || (month === endMonth && day <= endDay));
+
+          if (isInWeek) {
+            filteredSchedules.push(updatedSchedule);
+          }
+        }
+      } catch (err) {
+        console.error(`Error fetching fullname for ID ${ID}:`, err);
+      }
+    }
+
+    return filteredSchedules;
+  };
+
+  const [lab, setLab] = useState("");
+  const [lecturer, setLecturer] = useState("");
+  const [error, setError] = useState(null);
+
+  const fetchSchedules = async () => {
+    try {
+      let data;
+
+      if (lab.trim()) {
+        data = await GetSchedulesByLabAPI(lab);
+      } else if (lecturer.trim()) {
+        data = await GetScheduleByFullNameAPI(lecturer);
+      } else {
+        data = await GetAllScheduleAPI();
+      }
+
+      if (data) {
+        const formattedData = await formatScheduleData(data, year, week);
+        setScheduleData(formattedData);
+      } else {
+        setScheduleData([]);
+      }
+    } catch (err) {
+      console.error("Error fetching schedules:", err);
+      setError("Error fetching schedules");
+    }
+  };
+
+  useEffect(() => {
+    fetchSchedules();
+  }, [lab, lecturer, year, week]);
+
+  const handleLabChange = (event) => {
+    setLab(event.target.value);
+  };
+
+  const handleLecturerChange = (event) => {
+    setLecturer(event.target.value);
+  };
+
+  const handleDelete = async (id) => {
+    const isConfirmed = window.confirm(
+      "Are you sure you want to delete this schedule?"
+    );
+
+    if (!isConfirmed) {
+      return;
+    }
+
+    try {
+      const response = await DeleteScheduleAPI(id);
+      if (response.success) {
+        alert(response.message);
+        const updatedScheduleData = scheduleData.filter(
+          (schedule) => schedule.id !== id
+        );
+        setScheduleData(updatedScheduleData);
+      } else {
+        alert("Failed to delete schedule: " + response.message);
+      }
+    } catch (error) {
+      console.error("Error deleting schedule:", error);
+      alert(
+        "An error occurred while deleting the schedule. Please check the console for details."
+      );
+    }
+  };
+
   return (
     <Box sx={{ p: 2, bgcolor: "#fff", color: "white", minHeight: "100vh" }}>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: 2,
-          bgcolor: "#f5f5f5",
-          p: 1,
-          borderBottom: "1px solid #e0e0e0",
-        }}
-      >
-        {tabValue === 0 && (
-          <Box sx={{ mt: 3 }}>
-            <Typography
-              variant="subtitle1"
-              sx={{ fontWeight: "bold", color: "green", fontSize: 25 }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <ArrowCircleRightIcon sx={{ mr: 1 }} />
-                SCHEDULE
-              </Box>
-            </Typography>
-          </Box>
-        )}
-        {tabValue === 1 && (
-          <Box sx={{ mt: 3 }}>
-            <Typography
-              variant="subtitle1"
-              sx={{ fontWeight: "bold", color: "green", fontSize: 25 }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <ArrowCircleRightIcon sx={{ mr: 1 }} />
-                SCHEDULE
-              </Box>
-            </Typography>
-          </Box>
-        )}
-        {tabValue === 2 && (
-          <Box sx={{ mt: 3 }}>
-            <Typography
-              variant="subtitle1"
-              sx={{ fontWeight: "bold", color: "green", fontSize: 25 }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <ArrowCircleRightIcon sx={{ mr: 1 }} />
-                REGISTER
-              </Box>
-            </Typography>
-          </Box>
-        )}
-      </Box>
-
-      {/* Tabs  */}
       <Tabs
         value={tabValue}
         onChange={handleTabChange}
@@ -256,74 +266,110 @@ const Schedule = () => {
         textColor="primary"
         sx={{ mt: 3 }}
       >
-        <Tab label="Timetable" />
-        <Tab label="Timetable" />
-        <Tab label="Register Teaching Schedule" />
+        {(user.data.role === "Admin") 
+        && (<Tab label="Schedule List" />)}
+        {(user.data.role === "Student" || user.data.role === "Instructor") 
+        && (<Tab label="Timetable" />)}
+        {user.data.role === "Instructor" 
+        && (<Tab label="Register Teaching Schedule" />)}
       </Tabs>
-
       {/* Tab Timetable */}
-      {tabValue === 0 && (
+      {tabValue === 0 && user.data.role === "Admin" && (
         <Box sx={{ mt: 3 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-              <Select
-                value={year}
-                onChange={handleYearChange}
-                displayEmpty
-                inputProps={{ "aria-label": "Year" }}
-              >
-                {years.map((yearOption) => (
-                  <MenuItem key={yearOption} value={yearOption}>
-                    {yearOption}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-              <Select
-                value={week}
-                onChange={handleWeekChange}
-                displayEmpty
-                inputProps={{ "aria-label": "Week" }}
-              >
-                {weeks.map((weekOption) => (
-                  <MenuItem key={weekOption} value={weekOption}>
-                    {weekOption}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <IconButton
-                onClick={handlePrevWeek}
-                color="primary"
-                aria-label="previous week"
-              >
-                <ArrowBackIos />
-              </IconButton>
-
-              <Button
-                onClick={() => handleCurrentWeek()}
-                variant="outlined"
-                sx={{ mr: 1 }}
-              >
-                <GridOn sx={{ mr: 1 }} />
-                Current
-              </Button>
-
-              {canGoNextWeek && (
+          <Box>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                flexGrow: 1,
+              }}
+            >
+              <FormControl size="small" sx={{ minWidth: 100 }}>
+                <Select
+                  value={year}
+                  onChange={handleYearChange}
+                  displayEmpty
+                  inputProps={{ "aria-label": "Year" }}
+                >
+                  {years.map((yearOption) => (
+                    <MenuItem key={yearOption} value={yearOption}>
+                      {yearOption}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl size="small" sx={{ minWidth: 120 }}>
+                <Select
+                  value={week}
+                  onChange={handleWeekChange}
+                  displayEmpty
+                  inputProps={{ "aria-label": "Week" }}
+                >
+                  {weeks.map((weekOption) => (
+                    <MenuItem key={weekOption} value={weekOption}>
+                      {weekOption}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <IconButton
+                  onClick={handlePrevWeek}
+                  color="primary"
+                  aria-label="previous week"
+                  disabled={!canGoPrevWeek}
+                >
+                  <ArrowLeft />
+                </IconButton>
+                <Button
+                  onClick={handleCurrentWeek}
+                  variant="outlined"
+                  size="small"
+                  startIcon={<LayoutGrid />}
+                >
+                  Current
+                </Button>
                 <IconButton
                   onClick={handleNextWeek}
                   color="primary"
                   aria-label="next week"
+                  disabled={!canGoNextWeek}
                 >
-                  <ArrowForwardIos />
+                  <ArrowRight />
                 </IconButton>
-              )}
+              </Box>
+            </Box>
+
+            {/* Right side: Input fields */}
+            <Box
+              sx={{
+                display: "flex",
+                gap: 2,
+                flexGrow: 1,
+                justifyContent: "flex-end",
+              }}
+            >
+              <TextField
+                id="lab-input"
+                label="Lab"
+                variant="outlined"
+                size="small"
+                value={lab}
+                onChange={handleLabChange}
+                sx={{ flexGrow: 1, maxWidth: 200 }}
+              />
+              <TextField
+                id="lecturer-input"
+                label="Lecturer"
+                variant="outlined"
+                size="small"
+                value={lecturer}
+                onChange={handleLecturerChange}
+                sx={{ flexGrow: 1, maxWidth: 200 }}
+              />
             </Box>
           </Box>
-
           {/* Timetable  */}
           <TableContainer
             component={Paper}
@@ -332,15 +378,6 @@ const Schedule = () => {
             <Table sx={{ minWidth: 650 }}>
               <TableHead>
                 <TableRow>
-                  <TableCell
-                    sx={{
-                      fontWeight: "bold",
-                      textAlign: "center",
-                      fontSize: 17,
-                    }}
-                  >
-                    Code
-                  </TableCell>
                   <TableCell
                     sx={{
                       fontWeight: "bold",
@@ -357,7 +394,7 @@ const Schedule = () => {
                       fontSize: 17,
                     }}
                   >
-                    Room
+                    Lab
                   </TableCell>
                   <TableCell
                     sx={{
@@ -366,7 +403,16 @@ const Schedule = () => {
                       fontSize: 17,
                     }}
                   >
-                    Day
+                    Class
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      fontWeight: "bold",
+                      textAlign: "center",
+                      fontSize: 17,
+                    }}
+                  >
+                    Date
                   </TableCell>
                   <TableCell
                     sx={{
@@ -384,7 +430,16 @@ const Schedule = () => {
                       fontSize: 17,
                     }}
                   >
-                    Status
+                    Lecturer
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      fontWeight: "bold",
+                      textAlign: "center",
+                      fontSize: 17,
+                    }}
+                  >
+                    Actions
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -401,81 +456,48 @@ const Schedule = () => {
                     }}
                   >
                     <TableCell sx={{ textAlign: "center", fontSize: 17 }}>
-                      {scheduleItem.schedule.courseCode}
+                      {scheduleItem.course}
                     </TableCell>
                     <TableCell sx={{ textAlign: "center", fontSize: 17 }}>
-                      {scheduleItem.schedule.course}
+                      {scheduleItem.lab}
                     </TableCell>
                     <TableCell sx={{ textAlign: "center", fontSize: 17 }}>
-                      {scheduleItem.schedule.room}
+                      {scheduleItem.class}
                     </TableCell>
                     <TableCell sx={{ textAlign: "center", fontSize: 17 }}>
-                      {new Date(
-                        scheduleItem.schedule.startTime
-                      ).toLocaleDateString()}
-                     
+                      {new Date(scheduleItem.startTime).toLocaleDateString()}
                     </TableCell>
                     <TableCell sx={{ textAlign: "center", fontSize: 17 }}>
-                    {new Date(
-                        scheduleItem.schedule.startTime
-                      ).toLocaleTimeString()}-
-                      {new Date(scheduleItem.schedule.endTime).toLocaleTimeString()}
+                      {new Date(scheduleItem.startTime).toLocaleTimeString()}-
+                      {new Date(scheduleItem.endTime).toLocaleTimeString()}
                     </TableCell>
                     <TableCell sx={{ textAlign: "center", fontSize: 17 }}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
+                      {scheduleItem.fullname}
+                    </TableCell>
+                    <TableCell sx={{ textAlign: "center", fontSize: 17 }}>
+                      <IconButton
+                        color="error"
+                        onClick={() => handleDelete(scheduleItem.id)}
                       >
-                        {getStatusIcon(scheduleItem.status)}
-                        <Typography
-                          variant="body2"
-                          sx={{ marginLeft: 1, fontSize: 17 }}
-                        >
-                          {scheduleItem.status}
-                        </Typography>
-                      </Box>
+                        <DeleteIcon />
+                      </IconButton>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </TableContainer>
-          {/* Ghi chú */}
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-              More note:
-            </Typography>
-            {notes && notes.length > 0 ? (
-              notes.map((note, index) => (
-                <Typography key={index} sx={{ color: note.color }}>
-                  ({note.status}): huypr7645@gmail.com {note.description}
-                </Typography>
-              ))
-            ) : (
-              <Typography sx={{ color: "gray" }}>
-                No notes available.
-              </Typography>
-            )}
-          </Box>
-          {/* Download button */}
-          <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
-            <Button variant="contained" color="primary">
-              <Print sx={{ mr: 1 }} />
-              Download Timetable
-            </Button>
-          </Box>
         </Box>
       )}
-      {tabValue === 1 && (
-        <Box sx={{ mt: 3 }}>
-          <ScheduleFull />
-        </Box>
-      )}
+
+      {tabValue === 0 &&
+        (user.data.role === "Student" || user.data.role === "Instructor") && (
+          <Box sx={{ mt: 3 }}>
+            <ScheduleFull />
+          </Box>
+        )}
       {/* Tab  Register */}
-      {tabValue === 2 && (
+      {tabValue === 1 && user.data.role === "Instructor" && (
         <Box sx={{ mt: 3 }}>
           <Register />
         </Box>

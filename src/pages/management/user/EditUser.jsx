@@ -21,7 +21,7 @@ import regex from '~/utils/regex'
 import EditIcon from '@mui/icons-material/Edit'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import { editUserApi, getUserApi } from './service'
+import { editUserApi, getAllClassesApi, getAllDepartmentsApi, getUserApi } from './service'
 
 const CustomTextField = ({ name, label, value, onChange, error, touched, onBlur, type = 'text', ...props }) => {
 	return (
@@ -59,6 +59,24 @@ export default function EditUser() {
 	today.setDate(today.getDate() - 1)
 	const yesterday = today.toISOString().split('T')[0]
 
+	const [classes, setClasses] = useState([])
+	const [departments, setDepartments] = useState([])
+
+	const handleGetAllClasses = async () => {
+		const res = await getAllClassesApi()
+		setClasses(res.data)
+	}
+
+	const handleGetAllDepartments = async () => {
+		const res = await getAllDepartmentsApi()
+		setDepartments(res.data)
+	}
+
+	useEffect(() => {
+		handleGetAllClasses()
+		handleGetAllDepartments()
+	}, [])
+
 	const [formData, setFormData] = useState({
 		id: userId,
 		fullName: "",
@@ -69,6 +87,8 @@ export default function EditUser() {
 		dateOfBirth: "",
 		gender: "Other",
 		role: "",
+		classId: 0,
+		departmentId: 0,
 		isActive: true,
 	})
 
@@ -359,7 +379,11 @@ export default function EditUser() {
 								labelId="role-label"
 								name="role"
 								value={formData.role}
-								onChange={handleInputChange}
+								onChange={(e) => {
+									formData.classId = 0
+									formData.departmentId = 0
+									handleInputChange(e)
+								}}
 								onBlur={handleBlur}
 								label="Role"
 							>
@@ -373,8 +397,52 @@ export default function EditUser() {
 							{touched.role && errors.role && <FormHelperText>{errors.role}</FormHelperText>}
 						</FormControl>
 					</Grid>
-					<Grid item xs={12}>
-						<FormControl fullWidth error={touched.role && !!errors.role}>
+					{formData.role === 'Student' && (
+						<Grid item xs={12} sm={6}>
+							<FormControl fullWidth>
+								<InputLabel id="class-label">Select class</InputLabel>
+								<Select
+									labelId="class-label"
+									name="classId"
+									value={formData.classId}
+									onChange={handleInputChange}
+									onBlur={handleBlur}
+									label="Select class"
+								>
+									<MenuItem value={0}>--- select class ---</MenuItem>
+									{classes.map((item) => {
+										return (
+											<MenuItem key={item.id} value={item.id}>{item.name}</MenuItem>
+										)
+									})}
+								</Select>
+							</FormControl>
+						</Grid>
+					)}
+					{formData.role && formData.role !== 'Admin' && formData.role !== 'Student' && (
+						<Grid item xs={12} sm={6}>
+							<FormControl fullWidth>
+								<InputLabel id="department-label">Select department</InputLabel>
+								<Select
+									labelId="department-label"
+									name="departmentId"
+									value={formData.departmentId}
+									onChange={handleInputChange}
+									onBlur={handleBlur}
+									label="Select department"
+								>
+									<MenuItem value={0}>--- select department ---</MenuItem>
+									{departments.map((item) => {
+										return (
+											<MenuItem key={item.id} value={item.id}>{item.name}</MenuItem>
+										)
+									})}
+								</Select>
+							</FormControl>
+						</Grid>
+					)}
+					<Grid item xs={12} sm={formData.role !== 'Admin' ? 6 : 12}>
+						<FormControl fullWidth>
 							<InputLabel id="status-label">Status</InputLabel>
 							<Select
 								labelId="status-label"
