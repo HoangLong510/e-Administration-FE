@@ -227,7 +227,7 @@ export default function Device() {
                                         <TableCell component="th" scope="row">
                                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                                 <Avatar
-                                                    src={imagePath}  // Sử dụng đường dẫn đầy đủ
+                                                    src={imagePath}  
                                                     alt={device.name}
                                                     sx={{ mr: 1, width: 60, height: 60, borderRadius: 1 }}
                                                 />

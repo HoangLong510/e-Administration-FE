@@ -22,6 +22,11 @@ const protectedRoutes = [
     {
         path: '/schedule',
         component: Schedule,
+    layout: DefaultLayout,
+        roles: [
+            "Admin",
+            "Instructor",
+            "HOD",]},
     {
         path: '/profile',
         component: Profile,
