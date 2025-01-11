@@ -18,20 +18,49 @@ function App() {
 				<Routes>
 					{/* Auth Routes */}
 					{authRoutes.map((route, index) => {
-						const Page = route.component
-						const Layout = route.layout || NoLayout
-						return (
-							<Route key={index} path={route.path} element={
-								!user.exists ? (
-									<Layout>
-										<Page />
-									</Layout>
-								) : (
-									<Navigate to="/" replace />
-								)
-							} />
-						)
-					})}
+                        const Page = route.component
+                        const Layout = route.layout || NoLayout
+
+                        if ((user.data.role) === 'Admin') {
+                            return (
+                                <Route key={index} path={route.path} element={
+                                    !user.exists ? (
+                                        <Layout>
+                                            <Page />
+                                        </Layout>
+                                    ) : (
+                                        <Navigate to="/dashboard" replace />
+                                    )
+                                } />
+                            )
+                        }
+
+                        if ((user.data.role) === 'TechnicalStaff') {
+                            return (
+                                <Route key={index} path={route.path} element={
+                                    !user.exists ? (
+                                        <Layout>
+                                            <Page />
+                                        </Layout>
+                                    ) : (
+                                        <Navigate to="/task" replace />
+                                    )
+                                } />
+                            )
+                        }
+
+                        return (
+                            <Route key={index} path={route.path} element={
+                                !user.exists ? (
+                                    <Layout>
+                                        <Page />
+                                    </Layout>
+                                ) : (
+                                    <Navigate to="/schedule" replace />
+                                )
+                            } />
+                        )
+                    })}
 
 					{/* Protected routes */}
 					{protectedRoutes.map((route, index) => {
@@ -49,12 +78,44 @@ function App() {
 						}
 						// If the user is logged in but doesn't have the required role for the route, redirect to the home page
 						if (!route.roles.includes(user.data.role)) {
+							if ((user.data.role) === 'Admin') {
+								return (
+									<Route key={index} path={route.path} element={
+										!user.exists ? (
+											<Layout>
+												<Page />
+											</Layout>
+										) : (
+											<Navigate to="/dashboard" replace />
+										)
+									} />
+								)
+							}
+	
+							if ((user.data.role) === 'TechnicalStaff') {
+								return (
+									<Route key={index} path={route.path} element={
+										!user.exists ? (
+											<Layout>
+												<Page />
+											</Layout>
+										) : (
+											<Navigate to="/task" replace />
+										)
+									} />
+								)
+							}
+	
 							return (
-								<Route
-									key={index}
-									path={route.path}
-									element={<Navigate to="/" replace />}
-								/>
+								<Route key={index} path={route.path} element={
+									!user.exists ? (
+										<Layout>
+											<Page />
+										</Layout>
+									) : (
+										<Navigate to="/schedule" replace />
+									)
+								} />
 							)
 						}
 						// If both conditions are met, show the route's page with the appropriate layout
@@ -75,22 +136,47 @@ function App() {
 					{adminRoutes.map((route, index) => {
 						const Page = route.component
 						const Layout = route.layout || NoLayout
-						return (
-							<Route key={index} path={route.path} element={
-								user.data.role === "Admin" ? (
-									<Layout>
-										<Page />
-									</Layout>
-								) : (
-									<Navigate to="/" replace />
+
+						if (user.data.role === "Admin") {
+							return (
+                                <Route key={index} path={route.path} element={
+                                    <Layout>
+                                        <Page />
+                                    </Layout>
+                                } />
+                            )
+						} else {
+							if ((user.data.role) === 'TechnicalStaff') {
+								return (
+									<Route key={index} path={route.path} element={
+										!user.exists ? (
+											<Layout>
+												<Page />
+											</Layout>
+										) : (
+											<Navigate to="/task" replace />
+										)
+									} />
 								)
-							} />
-						)
+							}
+	
+							return (
+								<Route key={index} path={route.path} element={
+									!user.exists ? (
+										<Layout>
+											<Page />
+										</Layout>
+									) : (
+										<Navigate to="/schedule" replace />
+									)
+								} />
+							)
+						}
 					})}
 
 					{/* Routes not found */}
 					<Route path="*" element={
-						<Navigate to="/" replace />
+						<Navigate to="/auth/login" replace />
 					} />
 				</Routes>
 

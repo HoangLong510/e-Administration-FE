@@ -132,15 +132,17 @@ export default function ListReport() {
             md={6}
             sx={{ display: "flex", justifyContent: "flex-end" }}
           >
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => navigate("/create-report")}
-              startIcon={<AddIcon />}
-              sx={{ borderRadius: 2 }}
-            >
-              Create Report
-            </Button>
+            {role !== "Admin" && (
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => navigate("/create-report")}
+                startIcon={<AddIcon />}
+                sx={{ borderRadius: 2 }}
+              >
+                Create Report
+              </Button>
+            )}
           </Grid>
         </Grid>
 

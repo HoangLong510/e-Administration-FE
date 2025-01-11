@@ -221,13 +221,13 @@ export default function Device() {
                         </TableHead>
                         <TableBody>
                             {devices.length > 0 && devices.map((device, index) => {
-                                const imagePath = device.image ? `${import.meta.env.VITE_SERVER_URL}/${device.image}` : ''; // Tạo đường dẫn đầy đủ
+                                const imagePath = device.image ? `${import.meta.env.VITE_SERVER_URL}/uploads/${device.image}` : ''; // Tạo đường dẫn đầy đủ
                                 return (
                                     <TableRow key={index} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                                         <TableCell component="th" scope="row">
                                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                                 <Avatar
-                                                    src={imagePath}  // Sử dụng đường dẫn đầy đủ
+                                                    src={imagePath}  
                                                     alt={device.name}
                                                     sx={{ mr: 1, width: 60, height: 60, borderRadius: 1 }}
                                                 />

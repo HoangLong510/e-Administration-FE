@@ -3,42 +3,83 @@ import {
   Box,
   Button,
   Container,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
   TextField,
   Typography,
   Grid,
+  FormControl,
+  InputLabel,
+  FormHelperText,
+  Select,
+  MenuItem,
   Paper,
 } from "@mui/material";
-import { CreateScheduleAPI,  GetAllScheduleAPI } from "./service"; 
+import moment from "moment";
+import {
+  CreateScheduleAPI,
+  GetAllClassAPI,
+  GetAllLabAPI,
+  GetAllScheduleAPI,
+} from "./service";
+import { useDispatch } from "react-redux";
+import { setPopup } from "~/libs/features/popup/popupSlice";
 
 export default function Register() {
-  const [courseCode, setCourseCode] = useState("");
   const [course, setCourse] = useState("");
-  const [userName, setUserName] = useState("");
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("");
-  const [duration, setDuration] = useState("");
   const [endTime, setEndTime] = useState("");
-  const [room, setRoom] = useState("");
   const [description, setDescription] = useState("");
   const [errors, setErrors] = useState({});
   const [isSubmitDisabled, setIsSubmitDisabled] = useState(true);
+  const [allSchedule, setAllSchedule] = useState([]);
+  const [allClass, setAllClass] = useState([]);
+  const [allLab, setAllLab] = useState([]);
+  const [lab, setLab] = useState("");
+  const [className, setClassName] = useState("");
 
-  // Xử lý thay đổi form
+  const dispatch = useDispatch();
+
+  const handleGetAllLab = async () => {
+    try {
+      const res = await GetAllLabAPI();
+      if (res.success) {
+        const filteredLabs = res.data
+          .filter((lab) => lab.status === true)
+          .map((lab) => lab.name);
+        setAllLab(filteredLabs);
+      }
+    } catch (error) {}
+  };
+
+  const handleGetAllClass = async () => {
+    try {
+      const res = await GetAllClassAPI();
+      if (res.success) {
+        const classNames = res.data.map((classItem) => classItem.name);
+        setAllClass(classNames);
+      }
+    } catch (error) {}
+  };
+
+  useEffect(() => {
+    handleGetAllClass();
+    handleGetAllLab();
+  }, []);
+
+  const handleLabChange = (event) => {
+    setLab(event.target.value);
+  };
+
+  const handleClassChange = (event) => {
+    setClassName(event.target.value);
+  };
+
+  // Handle form changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     switch (name) {
-      case "CourseCode":
-        setCourseCode(value);
-        break;
       case "Course":
         setCourse(value);
-        break;
-      case "UserName":
-        setUserName(value);
         break;
       case "Date":
         setDate(value);
@@ -46,107 +87,165 @@ export default function Register() {
       case "StartTime":
         setStartTime(value);
         break;
-      case "Room":
-        setRoom(value);
+      case "Lab":
+        setLab(value);
         break;
       case "Description":
         setDescription(value);
         break;
-      case "Duration":
-        setDuration(value);
+      case "Class":
+        setClassName(value);
         break;
       default:
         break;
     }
   };
 
-  
   useEffect(() => {
-    if (startTime && duration) {
-      const startDate = new Date(`2000-01-01T${startTime}:00Z`);
-      startDate.setMinutes(startDate.getMinutes() + parseInt(duration, 10));
-      setEndTime(startDate.toISOString().substring(11, 16));
+    if (startTime) {
+      const startMoment = moment(startTime, "HH:mm").format("hh:mm A");
+      const startMomentObj = moment(startMoment, "hh:mm A");
+      startMomentObj.add(60, "minutes");
+      setEndTime(startMomentObj.format("hh:mm A"));
     } else {
       setEndTime("");
     }
-  }, [startTime, duration]);
+  }, [startTime]);
 
   const validateFields = () => {
     const newErrors = {};
-    if (!courseCode.trim()) newErrors.CourseCode = "Please enter the course code.";
     if (!course.trim()) newErrors.Course = "Please enter the course name.";
-    if (!userName.trim()) newErrors.UserName = "Please enter the instructor name.";
     if (!date.trim()) newErrors.Date = "Please select a date.";
     if (!startTime.trim()) newErrors.StartTime = "Please select a start time.";
-    if (!duration) newErrors.Duration = "Please select a duration.";
-    if (!room.trim()) newErrors.Room = "Please enter the room.";
+    if (!lab.trim()) newErrors.Lab = "Please enter the lab.";
+    if (!className.trim()) newErrors.Class = "Please enter the class.";
     return newErrors;
+  };
+
+  const validateTimeRange = (startTime) => {
+    const [startHours, startMinutes] = startTime.split(":").map(Number);
+    const startDate = new Date();
+    startDate.setHours(startHours, startMinutes, 0, 0);
+  
+    const isBeforeNoon = startDate.getHours() < 12;
+  
+    const endDate = new Date(startDate);
+    endDate.setMinutes(startDate.getMinutes() + 60); 
+  
+    const maxAllowedDuration =
+      (new Date().setHours(22, 0, 0, 0) - startDate) / 60000;
+  
+    const endValid = endDate <= new Date().setHours(22, 0, 0, 0);
+  
+    let error = "";
+  
+    if (isBeforeNoon) {
+      if (startDate < new Date().setHours(6, 0, 0, 0)) {
+        error = "Start time must be after 06:00 AM.";
+      } else if (startDate > new Date().setHours(10, 30, 0, 0)) {
+        error = "Start time must be before 10:30 AM.";
+      }
+    } else {
+      if (startDate < new Date().setHours(13, 0, 0, 0)) {
+        error = "Start time must be after 01:00 PM.";
+      } else if (startDate > new Date().setHours(21, 0, 0, 0)) {
+        error = "Start time must be before 09:00 PM.";
+      }
+    }
+  
+    if (!error && 60 > maxAllowedDuration) {
+      error = `Duration cannot exceed ${maxAllowedDuration} minutes to ensure the end time is before 10:00 PM.`;
+    } else if (!error && !endValid) {
+      error = "End time must be before 10:00 PM.";
+    }
+  
+    return error;
   };
 
   useEffect(() => {
     const newErrors = validateFields();
     setErrors(newErrors);
     setIsSubmitDisabled(Object.keys(newErrors).length > 0);
-  }, [courseCode, course, userName, date, startTime, duration, room]);
+  }, [course, date, startTime, lab, className]);
 
-  const [allSchedule ,setAllSchedule] =  useState()
   const handleGetAllSchedule = async () => {
-      try {
-        const res = await GetAllScheduleAPI();
-        const allSchedule = res?.allSchedule || [];
-        setAllSchedule(allSchedule)
-      } catch (err) {}
-    };
-    useEffect(() => {
-      handleGetAllSchedule();
-    }, []);
-const handleSubmit = async (event) => {
-  event.preventDefault();
-
-  const [year, month, day] = date.split("-");
-
-  const scheduleData = {
-    courseCode,
-    course,
-    userName,
-    startTime: `${date}T${startTime}:00Z`,
-    endTime: `${date}T${endTime}:00Z`,
-    room,
-    description,
-  };
-  try {
-    const newStartTime = new Date(year, month - 1, day, ...startTime.split(":"));
-    const newEndTime = new Date(year, month - 1, day, ...endTime.split(":"));
-    
-    let isConflict = false;
-    for(let i = 0; i <= allSchedule.length; i++){
-      const dataStartTime = allSchedule[i]?.schedule?.startTime;
-      const dataEndTime = allSchedule[i]?.schedule?.endTime;
-      const existingStartTime = new Date(dataStartTime);
-      const existingEndTime = new Date(dataEndTime); 
-      if (
-        (newStartTime >= existingStartTime && newStartTime < existingEndTime) || 
-        (newEndTime > existingStartTime && newEndTime <= existingEndTime) || 
-        (newStartTime <= existingStartTime && newEndTime >= existingEndTime) 
-      ) {
-        isConflict = true;
-      }
+    try {
+      const res = await GetAllScheduleAPI();
+      const allSchedule = res?.allSchedule || [];
+      setAllSchedule(allSchedule);
+    } catch (err) {
+      console.error("Error fetching schedules:", err);
     }
-// Handle conflict result
-if (isConflict) {
-  alert("This time is already booked. Please choose another time.");
-  return;
-}
+  };
 
-    // If no conflict, submit the schedule
-    await CreateScheduleAPI(scheduleData);
-    alert("Schedule created successfully!");
-  } catch (error) {
-    console.error("Error checking schedule conflicts:", error);
-    alert("An error occurred while checking or creating the schedule.");
-  }
-};
+  useEffect(() => {
+    handleGetAllSchedule();
+  }, []);
 
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    const timeError = validateTimeRange(startTime);
+    if (timeError) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        StartTime: timeError,
+      }));
+      return;
+    }
+
+    const [year, month, day] = date.split("-");
+    const [hours, minutes] = startTime.split(":");
+
+    const newStartTime = new Date(
+      Date.UTC(year, month - 1, day, hours, minutes)
+    );
+    const newEndTime = new Date(newStartTime);
+    newEndTime.setMinutes(newStartTime.getMinutes() + 45); 
+
+    const endHour = newEndTime.getHours();
+    const endMinute = newEndTime.getMinutes();
+    if (endHour >= 20 && endMinute > 0) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        EndTime: "End time must be before 08:00 PM.",
+      }));
+      return;
+    }
+
+    const scheduleData = {
+      course,
+      lab,
+      class: className,
+      startTime: newStartTime.toISOString(),
+      endTime: newEndTime.toISOString(),
+    };
+
+    try {
+      const res = await CreateScheduleAPI(scheduleData);
+      console.log(res);
+      if (res.message === "Schedule created successfully.") {
+        const dataPopup = {
+          type: "success",
+          message: `Schedule created successfully!`,
+        };
+        dispatch(setPopup(dataPopup));
+        handleGetAllSchedule();
+      } else {
+        const dataPopup = {
+          type: "error",
+          message: ` ${res.message || "Unknown error"}`,
+        };
+        dispatch(setPopup(dataPopup));
+      }
+    } catch (error) {
+      const dataPopup = {
+        type: "error",
+        message: "An error occurred while creating the schedule.",
+      };
+      dispatch(setPopup(dataPopup));
+    }
+  };
 
   return (
     <Container maxWidth="lg">
@@ -160,17 +259,6 @@ if (isConflict) {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Course Code"
-                name="CourseCode"
-                value={courseCode}
-                onChange={handleChange}
-                error={!!errors.CourseCode}
-                helperText={errors.CourseCode}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
                 label="Course Name"
                 name="Course"
                 value={course}
@@ -180,31 +268,47 @@ if (isConflict) {
               />
             </Grid>
 
-            {/* Other Inputs */}
             <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Instructor Name"
-                name="UserName"
-                value={userName}
-                onChange={handleChange}
-                error={!!errors.UserName}
-                helperText={errors.UserName}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Room"
-                name="Room"
-                value={room}
-                onChange={handleChange}
-                error={!!errors.Room}
-                helperText={errors.Room}
-              />
+              <FormControl fullWidth error={!!errors.Lab}>
+                <InputLabel htmlFor="lab-select">Lab</InputLabel>
+                <Select
+                  value={lab || ""}
+                  onChange={handleLabChange}
+                  name="Lab"
+                  label="Lab"
+                  id="lab-select"
+                >
+                  {allLab.map((labName, index) => (
+                    <MenuItem key={index} value={labName}>
+                      {labName}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <FormHelperText>{errors.Lab}</FormHelperText>
+              </FormControl>
             </Grid>
 
-            {/* Time Selection */}
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth error={!!errors.Class}>
+                <InputLabel htmlFor="class-select">Class</InputLabel>
+                <Select
+                  value={className || ""}
+                  onChange={handleClassChange}
+                  name="Class"
+                  label="Class"
+                  id="class-select"
+                >
+                  {allClass.map((className, index) => (
+                    <MenuItem key={index} value={className}>
+                      {className}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <FormHelperText>{errors.Class}</FormHelperText>
+              </FormControl>
+            </Grid>
+
+            {/* Date, Start Time */}
             <Grid item xs={12} sm={4}>
               <TextField
                 fullWidth
@@ -231,47 +335,38 @@ if (isConflict) {
                 InputLabelProps={{ shrink: true }}
               />
             </Grid>
+            {/* End Time */}
             <Grid item xs={12} sm={4}>
-              <FormControl fullWidth>
-                <InputLabel>Duration (Minutes)</InputLabel>
-                <Select
-                  name="Duration"
-                  value={duration}
-                  onChange={handleChange}
-                  error={!!errors.Duration}
-                >
-                  <MenuItem value={30}>30 minutes</MenuItem>
-                  <MenuItem value={60}>60 minutes</MenuItem>
-                  <MenuItem value={90}>90 minutes</MenuItem>
-                  <MenuItem value={120}>120 minutes</MenuItem>
-                </Select>
-                {errors.Duration && (
-                  <Typography variant="body2" color="error">
-                    {errors.Duration}
-                  </Typography>
-                )}
-              </FormControl>
+              <TextField
+                fullWidth
+                label="End Time"
+                value={endTime}
+                InputProps={{ readOnly: true }}
+              />
             </Grid>
 
-            <Grid item xs={12}>
+            {/* Description */}
+            <Grid item xs={12} sm={12}>
               <TextField
                 fullWidth
                 label="Description"
                 name="Description"
                 value={description}
                 onChange={handleChange}
+                error={!!errors.Description}
+                helperText={errors.Description}
                 multiline
-                rows={4}
+                rows={3}
               />
             </Grid>
-            <Grid item xs={12}>
+
+            <Grid item xs={12} sx={{ textAlign: "right" }}>
               <Button
                 type="submit"
                 variant="contained"
-                fullWidth
                 disabled={isSubmitDisabled}
               >
-                Register
+                Submit
               </Button>
             </Grid>
           </Grid>
