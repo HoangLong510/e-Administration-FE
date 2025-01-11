@@ -30,6 +30,7 @@ const protectedRoutes = [
     {
         path: '/schedule',
         component: Schedule,
+
         layout: DefaultLayout,
         roles: [
             "Admin",
@@ -39,6 +40,7 @@ const protectedRoutes = [
             "Student"
         ]
     },
+
     {
         path: '/profile',
         component: Profile,

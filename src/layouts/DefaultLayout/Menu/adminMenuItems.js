@@ -19,7 +19,8 @@ const adminMenuItems = [
         icon: FeedbackIcon
     },
     {
-        label: "Divices",
+
+        label: "Devices",
         href: `/management/devices`,
         icon: DevicesRoundedIcon
     },
