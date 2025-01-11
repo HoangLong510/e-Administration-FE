@@ -81,7 +81,6 @@ export default function User() {
 		dispatch(setLoading())
 		const res = await fetchUsersApi(data)
 		dispatch(clearLoading())
-		console.log(res)
 		if (res.success) {
 			setUsers(res.users)
 			setTotalPage(res.totalPages)
@@ -229,12 +228,15 @@ export default function User() {
 						<TableBody>
 							{users.length > 0 && users.map((user, index) => {
 								return (
-									<TableRow key={index}
+									<TableRow key={index} hover component={Link} to={`/management/user/edit/${user.id}`}
 										sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
 									>
 										<TableCell component="th" scope="row">
 											<Box sx={{ display: 'flex', alignItems: 'center' }}>
-												<Avatar sx={{ mr: 1 }} />
+												<Avatar
+													sx={{ mr: 1 }}
+													src={`${import.meta.env.VITE_SERVER_URL}/uploads/${user.avatar}`}
+												/>
 												<Box>
 													<Typography sx={{ fontSize: '15px', color: 'primary.main', fontWeight: 500 }}>
 														{user.fullName}

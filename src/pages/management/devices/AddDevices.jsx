@@ -12,10 +12,11 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { createDeviceApi, updateDeviceApi, getDeviceByIdApi } from './service';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 
 export default function AddDevices() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -40,14 +41,12 @@ export default function AddDevices() {
             description: device.description,
             status: device.status ? 'active' : 'Disable',
             image: device.image,
-            
           });
         }
       };
       fetchData();
     }
   }, [id]);
-
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -79,52 +78,60 @@ export default function AddDevices() {
 
     const validationErrors = {};
     Object.keys(formData).forEach((key) => {
-        if (!formData[key] || (typeof formData[key] === 'string' && formData[key].trim() === '')) {
-            validationErrors[key] = `${key.charAt(0).toUpperCase() + key.slice(1)} is required`;
-        }
+      if (!formData[key] || (typeof formData[key] === 'string' && formData[key].trim() === '')) {
+        validationErrors[key] = `${key.charAt(0).toUpperCase() + key.slice(1)} is required`;
+      }
     });
 
     if (Object.keys(validationErrors).length > 0) {
-        setErrors(validationErrors);
-        setTouched(Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
-        return;
+      setErrors(validationErrors);
+      setTouched(Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
+      return;
     }
 
     const data = new FormData();
     data.append('Name', formData.name);
     data.append('Type', formData.type);
     data.append('Description', formData.description);
-    data.append('Status', formData.status === 'active'); 
-    if (formData.image && formData.image instanceof File) 
-      { 
-        data.append('ImageFile', formData.image); 
-
-      } 
-      else if (formData.image) 
-        { data.append('Image', formData.image); }
-    console.log([...data]);
-    try {
-        let response;
-        if (id) {
-            response = await updateDeviceApi(id, data);
-        } else {
-            response = await createDeviceApi(data);
-        }
-        if (response.success) {
-            alert(id ? 'Device updated successfully!' : 'Device added successfully!');
-        } else {
-            console.error('Error response:', response); // Log chi tiết lỗi
-            alert(`Error: ${response.message}`);
-        }
-    } catch (error) {
-        console.error('Error response:', error.response); // Log chi tiết lỗi
-        alert(id ? 'An error occurred while updating the device.' : 'An error occurred while adding the device.');
+    data.append('Status', formData.status === 'active');
+    if (formData.image && formData.image instanceof File) {
+      data.append('ImageFile', formData.image);
+    } else if (formData.image) {
+      data.append('Image', formData.image);
     }
-};
 
-
-
-
+    try {
+      let response;
+      if (id) {
+        response = await updateDeviceApi(id, data);
+      } else {
+        response = await createDeviceApi(data);
+      }
+      if (response.success) {
+        alert(id ? 'Device updated successfully!' : 'Device added successfully!');
+        if (!id) {
+          setFormData({
+            name: '',
+            type: '',
+            description: '',
+            status: '',
+            image: null,
+          });
+          setErrors({});
+          setTouched({});
+        } else {
+          // Chuyển hướng về trang Device sau khi cập nhật thành công
+          navigate('/management/devices');
+        }
+      } else {
+        console.error('Error response:', response);
+        alert(`Error: ${response.message}`);
+      }
+    } catch (error) {
+      console.error('Error response:', error.response);
+      alert(id ? 'An error occurred while updating the device.' : 'An error occurred while adding the device.');
+    }
+  };
 
   return (
     <Box sx={{ maxWidth: 1200, margin: '0 auto', p: 3, bgcolor: '#fff', borderRadius: '10px' }}>
@@ -149,7 +156,7 @@ export default function AddDevices() {
           Back to list
         </Button>
       </Box>
-  
+
       {/* Form */}
       <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         <TextField
@@ -165,7 +172,7 @@ export default function AddDevices() {
           helperText={touched.name && errors.name}
           sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
         />
-  
+
         <TextField
           fullWidth
           name="type"
@@ -179,7 +186,7 @@ export default function AddDevices() {
           helperText={touched.type && errors.type}
           sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
         />
-  
+
         <TextField
           fullWidth
           name="description"
@@ -196,7 +203,7 @@ export default function AddDevices() {
           sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
           slotProps={{ inputLabel: { shrink: true } }}
         />
-  
+
         <FormControl fullWidth required error={touched.status && !!errors.status}>
           <InputLabel id="status-label">Status</InputLabel>
           <Select
@@ -213,23 +220,21 @@ export default function AddDevices() {
           </Select>
           <FormHelperText>{touched.status && errors.status}</FormHelperText>
         </FormControl>
-  
+
         <Box>
-  <InputLabel id="image-label">Upload Image</InputLabel>
-  <TextField
-    name="image"
-    type="file"
-    inputProps={{ accept: 'image/*' }}
-    onChange={handleImageChange}
-    onBlur={handleBlur}
-    error={touched.image && !!errors.image}
-    helperText={touched.image && errors.image}
-    sx={{ mt: 1 }}
-  />
+          <InputLabel id="image-label">Upload Image</InputLabel>
+          <TextField
+            name="image"
+            type="file"
+            inputProps={{ accept: 'image/*' }}
+            onChange={handleImageChange}
+            onBlur={handleBlur}
+            error={touched.image && !!errors.image}
+            helperText={touched.image && errors.image}
+            sx={{ mt: 1 }}
+          />
+        </Box>
 
-</Box>
-
-  
         <Box sx={{ mt: 2 }}>
           <Button
             type="submit"
@@ -248,6 +253,4 @@ export default function AddDevices() {
       </Box>
     </Box>
   );
-  
-
 }

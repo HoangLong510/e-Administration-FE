@@ -17,49 +17,38 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
-// import { fetchLabDevicesApi } from './service';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useDispatch } from 'react-redux';
 import { setPopup } from '~/libs/features/popup/popupSlice';
 import { clearLoading, setLoading } from '~/libs/features/loading/loadingSlice';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import { fetchAddToLabApi, addDevicesToLabApi } from './service';
 
 export default function AddToLab({ labName }) {
     const dispatch = useDispatch();
-    const [devices, setDevices] = useState([
-        {
-            name: 'Device 1',
-            description: 'This is device 1',
-            type: 'Hardware',
-        },
-        {
-            name: 'Device 2',
-            description: 'This is device 2',
-            type: 'Software',
-            licenseExpire: '2023-12-31',
-        },
-        {
-            name: 'Device 3',
-            description: 'This is device 3',
-            type: 'Hardware',
-        },
-    ]);
+    const { labId } = useParams();
+    const [devices, setDevices] = useState([]);
     const [selectedDevices, setSelectedDevices] = useState([]);
     const [searchValue, setSearchValue] = useState('');
 
+    const handleSearchChange = (event) => { 
+        setSearchValue(event.target.value); 
+    };
+
     const handleToggleAll = (event) => {
         if (event.target.checked) {
-            setSelectedDevices(devices.map((device) => device.name));
+            setSelectedDevices(devices.map((device) => device.id));
         } else {
             setSelectedDevices([]);
         }
     };
 
-    const handleToggle = (name) => {
-        const currentIndex = selectedDevices.indexOf(name);
+    const handleToggle = (id) => {
+        const currentIndex = selectedDevices.indexOf(id);
         const newSelected = [...selectedDevices];
 
         if (currentIndex === -1) {
-            newSelected.push(name);
+            newSelected.push(id);
         } else {
             newSelected.splice(currentIndex, 1);
         }
@@ -72,32 +61,9 @@ export default function AddToLab({ labName }) {
             searchValue,
         };
         dispatch(setLoading());
-        // const res = await fetchLabDevicesApi(data);
+        const res = await fetchAddToLabApi(data); // Gọi API lấy dữ liệu
         dispatch(clearLoading());
-        // Simulate fetching lab devices with seeded data
-        const res = {
-            success: true,
-            devices: [
-                {
-                    name: 'Device 1',
-                    description: 'This is device 1',
-                    type: 'Hardware',
-                },
-                {
-                    name: 'Device 2',
-                    description: 'This is device 2',
-                    type: 'Software',
-                    licenseExpire: '2023-12-31',
-                },
-                {
-                    name: 'Device 3',
-                    description: 'This is device 3',
-                    type: 'Hardware',
-                },
-            ],
-        };
 
-        console.log(res);
         if (res.success) {
             setDevices(res.devices);
         } else {
@@ -108,6 +74,37 @@ export default function AddToLab({ labName }) {
             dispatch(setPopup(dataPopup));
         }
     };
+
+    const handleAddDevicesToLab = async () => {
+        const data = {
+            labId,
+            deviceIds: selectedDevices,
+        };
+        console.log(data);
+        dispatch(setLoading());
+        const res = await addDevicesToLabApi(data); // Gọi API để thêm các thiết bị vào lab
+        dispatch(clearLoading());
+
+        if (res.success) {
+            const dataPopup = {
+                type: 'success',
+                message: "Devices added to lab successfully",
+            };
+            dispatch(setPopup(dataPopup));
+            setSelectedDevices([]);
+            handlefetchLabDevices(); // Fetch the updated list
+        } else {
+            const dataPopup = {
+                type: 'error',
+                message: res.message,
+            };
+            dispatch(setPopup(dataPopup));
+        }
+    };
+
+    useEffect(() => {
+        handlefetchLabDevices();
+    }, [searchValue]);
 
     useEffect(() => {
         handlefetchLabDevices();
@@ -135,14 +132,14 @@ export default function AddToLab({ labName }) {
                 </Typography>
                 <Grid container spacing={3} sx={{ mb: 3, mt: 2 }}>
                     <Grid item xs={12} sm={6} md={5}>
-                        <TextField 
-                            fullWidth 
+                        <TextField
+                            fullWidth
                             size='small'
                             id="outlined-basic"
                             label="Search"
                             variant="outlined"
                             value={searchValue}
-                            onChange={(e) => setSearchValue(e.target.value)}
+                            onChange={handleSearchChange}
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
@@ -163,8 +160,24 @@ export default function AddToLab({ labName }) {
                                 height: '100%',
                                 padding: '10px 20px',
                             }}
+                            onClick={handleAddDevicesToLab} // Gọi hàm khi bấm nút Add
                         >
                             {`Add ${selectedDevices.length > 0 ? `(${selectedDevices.length})` : ''}`}
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            startIcon={<ArrowBackIcon />}
+                            sx={{
+                                borderRadius: '20px',
+                                textTransform: 'none',
+                                height: '100%',
+                                padding: '10px 20px',
+                            }}
+                            component={Link}
+                            to={`/management/labdevice/${labId}`} // Sử dụng Link để điều hướng và thêm LabId vào URL
+                        >
+                            Back to Lab Device
                         </Button>
                     </Grid>
                 </Grid>
@@ -190,15 +203,15 @@ export default function AddToLab({ labName }) {
                                     <TableCell padding="checkbox">
                                         <Checkbox
                                             color="primary"
-                                            checked={selectedDevices.indexOf(device.name) !== -1}
-                                            onChange={() => handleToggle(device.name)}
+                                            checked={selectedDevices.indexOf(device.id) !== -1}
+                                            onChange={() => handleToggle(device.id)}
                                         />
                                     </TableCell>
                                     <TableCell>
                                         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                                             <Typography sx={{ fontSize: '15px', color: 'primary.main', fontWeight: 500 }}>{device.name}</Typography>
                                             <Typography sx={{ fontSize: '15px', color: '#666' }}>{device.type}</Typography>
-                                            {device.type === 'Software' && (
+                                            {device.isSoftware && device.licenseExpire && (
                                                 <Typography sx={{ fontSize: '13px', color: '#666' }}>License Expire: {device.licenseExpire}</Typography>
                                             )}
                                         </Box>

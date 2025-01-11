@@ -13,7 +13,7 @@ const adminMenuItems = [
         icon: ManageAccountsIcon
     },
     {
-        label: "Divices",
+        label: "Devices",
         href: `/management/devices`,
         icon: DevicesRoundedIcon
     },

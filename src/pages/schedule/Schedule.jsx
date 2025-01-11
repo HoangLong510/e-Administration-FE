@@ -13,16 +13,16 @@ import {
   FormControl,
   Select,
   MenuItem,
+  Grid,
   Button,
   IconButton,
   Tabs,
   Tab,
 } from "@mui/material";
 import { ArrowLeft, ArrowRight, LayoutGrid } from "lucide-react";
-import Print from "@mui/icons-material/Print";
 import DeleteIcon from "@mui/icons-material/Delete";
-import Register from "./Register";
-import ScheduleFull from "./ScheduleFull";
+import { useDispatch } from "react-redux";
+import { setPopup } from "~/libs/features/popup/popupSlice";
 import { format } from "date-fns";
 import {
   GetAllScheduleAPI,
@@ -30,7 +30,14 @@ import {
   GetSchedulesByLabAPI,
   GetScheduleByFullNameAPI,
   GetScheduleByIdAPI,
+  GetScheduleByConditionAPI,
 } from "./service";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import ScheduleFull from "./ScheduleFull";
+import Register from "./Register";
 
 const Schedule = () => {
   const [years, setYears] = useState([]);
@@ -38,145 +45,166 @@ const Schedule = () => {
   const [weeks, setWeeks] = useState([]);
   const [week, setWeek] = useState(0);
   const [tabValue, setTabValue] = useState(0);
-
+  
   const user = useSelector((state) => state.user.value);
-  // Generate year options
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
   useEffect(() => {
     const currentYear = new Date().getFullYear();
     const yearOptions = [];
-    for (let i = currentYear - 4; i <= currentYear; i++) {
+    for (let i = currentYear - 4; i <= currentYear + 2; i++) {
       yearOptions.push(i);
     }
     setYears(yearOptions);
   }, []);
-  // Generate week options
-  useEffect(() => {
+
+  const generateWeeksForYear = (year) => {
     const weekOptions = [];
     let startDate = new Date(year, 0, 1);
     const endDate = new Date(year, 11, 31);
+    const dayOfWeek = startDate.getDay();
+    if (dayOfWeek !== 0) {
+      startDate.setDate(startDate.getDate() - dayOfWeek);
+    }
 
     while (startDate <= endDate) {
-      const weekStart = format(startDate, "dd/MM");
+      const weekStart = format(startDate, "dd/MM/yyyy");
       const weekEnd = format(
         new Date(startDate.getTime() + 6 * 24 * 60 * 60 * 1000),
-        "dd/MM"
+        "dd/MM/yyyy"
       );
-      weekOptions.push(`${weekStart}-${weekEnd}`);
+      weekOptions.push({
+        label: `${weekStart} - ${weekEnd}`,
+        startDate: new Date(startDate),
+        endDate: new Date(startDate.getTime() + 6 * 24 * 60 * 60 * 1000),
+      });
       startDate.setDate(startDate.getDate() + 7);
     }
+    return weekOptions;
+  };
 
-    setWeeks(weekOptions);
+  useEffect(() => {
+    const weeksForYear = generateWeeksForYear(year);
+    setWeeks(weeksForYear);
   }, [year]);
 
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
-  const handleWeekChange = (event) => {
-    setWeek(event.target.value);
-  };
   const handleYearChange = (event) => {
-    setYear(event.target.value);
-    setWeek();
+    const newYear = event.target.value;
+    setYear(newYear);
+    setWeeks(generateWeeksForYear(newYear));
+    setWeek("");
   };
 
-  const handlePrevWeek = async () => {
-    const currentWeekIndex = weeks.indexOf(week);
-    if (currentWeekIndex > 0) {
-      setWeek(weeks[currentWeekIndex - 1]);
+  const handleWeekChange = (event) => {
+    const selectedWeek = weeks.find((w) => w.label === event.target.value);
+    if (selectedWeek) {
+      setWeek(selectedWeek);
     }
   };
-  const canGoPrevWeek = weeks.indexOf(week) > 0;
+
+  const handlePrevWeek = () => {
+    const currentIndex = weeks.findIndex((w) => w.label === week.label);
+    if (currentIndex > 0) {
+      setWeek(weeks[currentIndex - 1]);
+    } else {
+      const prevYear = year - 1;
+      const prevYearWeeks = generateWeeksForYear(prevYear);
+      setYear(prevYear);
+      setWeeks(prevYearWeeks);
+      setWeek(prevYearWeeks[prevYearWeeks.length - 2]);
+    }
+  };
 
   const handleNextWeek = () => {
-    const currentWeekIndex = weeks.indexOf(week);
-    if (currentWeekIndex < weeks.length - 1) {
-      setWeek(weeks[currentWeekIndex + 1]);
+    const currentIndex = weeks.findIndex((w) => w.label === week.label);
+    if (currentIndex < weeks.length - 1) {
+      setWeek(weeks[currentIndex + 1]);
+    } else {
+      const nextYear = year + 1;
+      const nextYearWeeks = generateWeeksForYear(nextYear);
+      setYear(nextYear);
+      setWeeks(nextYearWeeks);
+      setWeek(nextYearWeeks[1]);
     }
   };
-  const canGoNextWeek = weeks.indexOf(week) < weeks.length - 1;
-  
+
   const handleCurrentWeek = () => {
     const currentYear = new Date().getFullYear();
-    setYear(currentYear);
     const currentDay = new Date();
-    const formattedDate = format(currentDay, "dd/MM");
-
-    for (const week of weeks) {
-      const [startRange, endRange] = week.split("-");
-      const [startDay, startMonth] = startRange.split("/");
-      const [endDay, endMonth] = endRange.split("/");
-      const startDate = new Date(
-        Date.UTC(currentYear, parseInt(startMonth) - 1, parseInt(startDay))
+    const currentDayOnly = new Date(
+      currentDay.getFullYear(),
+      currentDay.getMonth(),
+      currentDay.getDate()
+    );
+    const currentYearWeeks = generateWeeksForYear(currentYear);
+    let foundCurrentWeek = false;
+    for (const week of currentYearWeeks) {
+      const startDate = new Date(week.startDate);
+      const endDate = new Date(week.endDate);
+      const startDateOnly = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate()
       );
-
-      const endDate = new Date(
-        Date.UTC(
-          parseInt(endMonth) < parseInt(startMonth)
-            ? currentYear + 1
-            : currentYear,
-          parseInt(endMonth) - 1,
-          parseInt(endDay)
-        )
+      const endDateOnly = new Date(
+        endDate.getFullYear(),
+        endDate.getMonth(),
+        endDate.getDate()
       );
-
-      const [currentDay, currentMonth] = formattedDate.split("/");
-      const checkDate = new Date(
-        Date.UTC(currentYear, parseInt(currentMonth) - 1, parseInt(currentDay))
-      );
-
-      if (checkDate >= startDate && checkDate <= endDate) {
+      if (currentDayOnly >= startDateOnly && currentDayOnly <= endDateOnly) {
+        setYear(currentYear);
+        setWeeks(currentYearWeeks);
         setWeek(week);
-        return;
+        foundCurrentWeek = true;
+        break;
       }
     }
+    if (!foundCurrentWeek) {
+      console.error("Current week not found in generated weeks.");
+    }
   };
+
   useEffect(() => {
-    handleCurrentWeek()
+    handleCurrentWeek();
   }, []);
+
   const [scheduleData, setScheduleData] = useState([]);
 
   const handleGetAllSchedule = async () => {
     try {
       const res = await GetAllScheduleAPI();
-      const formattedData = formatScheduleData(res || [], year, week);
+      const formattedData = await formatScheduleData(res || [], year, week);
       setScheduleData(formattedData);
+      console.log(formattedData);
     } catch (err) {
       console.error("Error fetching all schedules:", err);
     }
   };
+  useEffect(() => {
+    handleGetAllSchedule();
+  }, []);
 
   const formatScheduleData = async (schedules, year, week) => {
     if (!schedules || !Array.isArray(schedules)) return [];
-
     const filteredSchedules = [];
-
+    const startOfWeek = new Date(week.startDate);
+    const endOfWeek = new Date(week.endDate);
+    endOfWeek.setHours(23, 59, 59, 999);
     for (const schedule of schedules) {
       const ID = schedule?.id;
-
       try {
         const ScheduleById = await GetScheduleByIdAPI(ID);
         const fullname = ScheduleById?.fullName || "Unknown";
-        const updatedSchedule = {
-          ...schedule,
-          fullname,
-        };
+        const updatedSchedule = { ...schedule, fullname };
         const startTime = schedule?.startTime;
         const date = new Date(startTime);
-        const day = date.getDate();
-        const month = date.getMonth() + 1;
         const yeardata = date.getFullYear();
-
         if (yeardata === year) {
-          const [start, end] = week ? week.split("-") : [];
-          if (!start || !end) continue;
-
-          const [startDay, startMonth] = start.split("/").map(Number);
-          const [endDay, endMonth] = end.split("/").map(Number);
-
+          const scheduleDate = new Date(startTime);
           const isInWeek =
-            (month > startMonth || (month === startMonth && day >= startDay)) &&
-            (month < endMonth || (month === endMonth && day <= endDay));
-
+            scheduleDate >= startOfWeek && scheduleDate <= endOfWeek;
           if (isInWeek) {
             filteredSchedules.push(updatedSchedule);
           }
@@ -185,7 +213,6 @@ const Schedule = () => {
         console.error(`Error fetching fullname for ID ${ID}:`, err);
       }
     }
-
     return filteredSchedules;
   };
 
@@ -196,15 +223,18 @@ const Schedule = () => {
   const fetchSchedules = async () => {
     try {
       let data;
-
-      if (lab.trim()) {
+      if (lab.trim() && lecturer.trim()) {
+        data = await GetScheduleByConditionAPI(lecturer, lab);
+      }
+      else if (lab.trim()) {
         data = await GetSchedulesByLabAPI(lab);
-      } else if (lecturer.trim()) {
+      }
+      else if (lecturer.trim()) {
         data = await GetScheduleByFullNameAPI(lecturer);
-      } else {
+      }
+      else {
         data = await GetAllScheduleAPI();
       }
-
       if (data) {
         const formattedData = await formatScheduleData(data, year, week);
         setScheduleData(formattedData);
@@ -216,45 +246,82 @@ const Schedule = () => {
       setError("Error fetching schedules");
     }
   };
-
+  
   useEffect(() => {
     fetchSchedules();
   }, [lab, lecturer, year, week]);
-
+  
   const handleLabChange = (event) => {
     setLab(event.target.value);
   };
-
+  
   const handleLecturerChange = (event) => {
     setLecturer(event.target.value);
   };
+  //Delete
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [scheduleToDelete, setScheduleToDelete] = useState(null);
 
-  const handleDelete = async (id) => {
-    const isConfirmed = window.confirm(
-      "Are you sure you want to delete this schedule?"
+  const dispatch = useDispatch();
+
+  const handleOpenDeleteDialog = (id) => {
+    setScheduleToDelete(id);
+    setOpenDeleteDialog(true);
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setScheduleToDelete(null);
+    setOpenDeleteDialog(false);
+  };
+  const DeleteConfirmationDialog = ({ open, onClose, onConfirm }) => {
+    return (
+      <Dialog open={open} onClose={onClose}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          Are you sure you want to delete this schedule? This action cannot be
+          undone.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={onConfirm} color="secondary">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
     );
-
-    if (!isConfirmed) {
-      return;
-    }
-
-    try {
-      const response = await DeleteScheduleAPI(id);
-      if (response.success) {
-        alert(response.message);
-        const updatedScheduleData = scheduleData.filter(
-          (schedule) => schedule.id !== id
+  };
+  const handleDelete = async () => {
+    if (scheduleToDelete) {
+      try {
+        const response = await DeleteScheduleAPI(scheduleToDelete);
+        console.log(response)
+        if (response.success) {
+          const dataPopup = {
+            type: "success",
+            message: ` Deleted successfully!`,
+          };
+          dispatch(setPopup(dataPopup));
+          const updatedScheduleData = scheduleData.filter(
+            (schedule) => schedule.id !== scheduleToDelete
+          );
+          setScheduleData(updatedScheduleData);
+        } else {
+          const dataPopup = {
+            type: "error",
+            message: ` Failed to delete` + response.message,
+          };
+          dispatch(setPopup(dataPopup));
+        }
+      } catch (error) {
+        console.error("Error deleting schedule:", error);
+        alert(
+          "An error occurred while deleting the schedule. Please check the console for details."
         );
-        setScheduleData(updatedScheduleData);
-      } else {
-        alert("Failed to delete schedule: " + response.message);
       }
-    } catch (error) {
-      console.error("Error deleting schedule:", error);
-      alert(
-        "An error occurred while deleting the schedule. Please check the console for details."
-      );
     }
+    handleCloseDeleteDialog();
   };
 
   return (
@@ -273,52 +340,45 @@ const Schedule = () => {
         {user.data.role === "Instructor" 
         && (<Tab label="Register Teaching Schedule" />)}
       </Tabs>
-      {/* Tab Timetable */}
       {tabValue === 0 && user.data.role === "Admin" && (
-        <Box sx={{ mt: 3 }}>
-          <Box>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-                flexGrow: 1,
-              }}
-            >
-              <FormControl size="small" sx={{ minWidth: 100 }}>
+      <Box sx={{ mt: 3 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={7} md={5}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <FormControl size="small" sx={{ minWidth: 120 }}>
                 <Select
                   value={year}
                   onChange={handleYearChange}
                   displayEmpty
                   inputProps={{ "aria-label": "Year" }}
                 >
-                  {years.map((yearOption) => (
+                  {years.slice(0, 10).map((yearOption) => (
                     <MenuItem key={yearOption} value={yearOption}>
                       {yearOption}
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
-              <FormControl size="small" sx={{ minWidth: 120 }}>
+              <FormControl size="small" sx={{ minWidth: 300 }}>
                 <Select
-                  value={week}
+                  value={week?.label || ""}
                   onChange={handleWeekChange}
                   displayEmpty
                   inputProps={{ "aria-label": "Week" }}
                 >
                   {weeks.map((weekOption) => (
-                    <MenuItem key={weekOption} value={weekOption}>
-                      {weekOption}
+                    <MenuItem key={weekOption.label} value={weekOption.label}>
+                      {weekOption.label}
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
+
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <IconButton
                   onClick={handlePrevWeek}
                   color="primary"
                   aria-label="previous week"
-                  disabled={!canGoPrevWeek}
                 >
                   <ArrowLeft />
                 </IconButton>
@@ -334,20 +394,20 @@ const Schedule = () => {
                   onClick={handleNextWeek}
                   color="primary"
                   aria-label="next week"
-                  disabled={!canGoNextWeek}
                 >
                   <ArrowRight />
                 </IconButton>
               </Box>
             </Box>
-
-            {/* Right side: Input fields */}
+          </Grid>
+          <Grid item xs={12} sm={5} md={7}>
+            {/* Align inputs to the right */}
             <Box
               sx={{
                 display: "flex",
-                gap: 2,
-                flexGrow: 1,
                 justifyContent: "flex-end",
+                alignItems: "center",
+                gap: 2,
               }}
             >
               <TextField
@@ -357,7 +417,7 @@ const Schedule = () => {
                 size="small"
                 value={lab}
                 onChange={handleLabChange}
-                sx={{ flexGrow: 1, maxWidth: 200 }}
+                sx={{ maxWidth: 200 }}
               />
               <TextField
                 id="lecturer-input"
@@ -366,125 +426,66 @@ const Schedule = () => {
                 size="small"
                 value={lecturer}
                 onChange={handleLecturerChange}
-                sx={{ flexGrow: 1, maxWidth: 200 }}
+                sx={{ maxWidth: 200 }}
               />
             </Box>
-          </Box>
-          {/* Timetable  */}
-          <TableContainer
-            component={Paper}
-            sx={{ mt: 3, border: "1px solid #e0e0e0", borderRadius: 1 }}
-          >
-            <Table sx={{ minWidth: 650 }}>
-              <TableHead>
-                <TableRow>
-                  <TableCell
-                    sx={{
-                      fontWeight: "bold",
-                      textAlign: "center",
-                      fontSize: 17,
-                    }}
-                  >
-                    Course
+          </Grid>
+        </Grid>
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Course</TableCell>
+                <TableCell>Lab</TableCell>
+                <TableCell>Class</TableCell>
+                <TableCell>Lecturer</TableCell>
+                <TableCell>Date</TableCell>
+                <TableCell>Time</TableCell>
+                <TableCell>Action</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {scheduleData.map((schedule) => (
+                <TableRow key={schedule.id}>
+                  <TableCell>{schedule.course}</TableCell>
+                  <TableCell>{schedule.lab}</TableCell>
+                  <TableCell>{schedule.class}</TableCell>
+                  <TableCell>{schedule.fullname}</TableCell>
+                  <TableCell>
+                    {new Date(schedule.startTime).toLocaleDateString()} -{" "}
+                    {new Date(schedule.endTime).toLocaleDateString()}
                   </TableCell>
-                  <TableCell
-                    sx={{
-                      fontWeight: "bold",
-                      textAlign: "center",
-                      fontSize: 17,
-                    }}
-                  >
-                    Lab
+                  <TableCell>
+                    {new Date(schedule.startTime).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}{" "}
+                    -
+                    {new Date(schedule.endTime).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </TableCell>
-                  <TableCell
-                    sx={{
-                      fontWeight: "bold",
-                      textAlign: "center",
-                      fontSize: 17,
-                    }}
-                  >
-                    Date
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      fontWeight: "bold",
-                      textAlign: "center",
-                      fontSize: 17,
-                    }}
-                  >
-                    Time
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      fontWeight: "bold",
-                      textAlign: "center",
-                      fontSize: 17,
-                    }}
-                  >
-                    Lecturer
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      fontWeight: "bold",
-                      textAlign: "center",
-                      fontSize: 17,
-                    }}
-                  >
-                    Actions
+                  <TableCell>
+                    <IconButton
+                      onClick={() => handleOpenDeleteDialog(schedule.id)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
                   </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {scheduleData.map((scheduleItem, index) => (
-                  <TableRow
-                    key={index}
-                    sx={{
-                      border: "1px solid #ccc",
-                      "&:hover": {
-                        backgroundColor: "#f0f0f0",
-                        cursor: "pointer",
-                      },
-                    }}
-                  >
-                    <TableCell sx={{ textAlign: "center", fontSize: 17 }}>
-                      {scheduleItem.course}
-                    </TableCell>
-                    <TableCell sx={{ textAlign: "center", fontSize: 17 }}>
-                      {scheduleItem.lab}
-                    </TableCell>
-                    <TableCell sx={{ textAlign: "center", fontSize: 17 }}>
-                      {new Date(scheduleItem.startTime).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell sx={{ textAlign: "center", fontSize: 17 }}>
-                      {new Date(scheduleItem.startTime).toLocaleTimeString()}-
-                      {new Date(scheduleItem.endTime).toLocaleTimeString()}
-                    </TableCell>
-                    <TableCell sx={{ textAlign: "center", fontSize: 17 }}>
-                      {scheduleItem.fullname}
-                    </TableCell>
-                    <TableCell sx={{ textAlign: "center", fontSize: 17 }}>
-                      <IconButton
-                        color="error"
-                        onClick={() => handleDelete(scheduleItem.id)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          {/* Download button */}
-          <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
-            <Button variant="contained" color="primary">
-              <Print sx={{ mr: 1 }} />
-              Download Timetable
-            </Button>
-          </Box>
-        </Box>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        
+        <DeleteConfirmationDialog
+          open={openDeleteDialog}
+          onClose={handleCloseDeleteDialog}
+          onConfirm={handleDelete}
+        />
+      </Box>
       )}
-
       {tabValue === 0 &&
         (user.data.role === "Student" || user.data.role === "Instructor") && (
           <Box sx={{ mt: 3 }}>

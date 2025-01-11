@@ -5,7 +5,11 @@ import Report from "~/pages/auth/report/Report"
 import ListReport from "~/pages/auth/report/ListReport"
 import ChangePassword from "~/pages/auth/profile/ChangePassword"
 import ReportDetails from "~/pages/auth/report/ReportDetails"
+import Task from "~/pages/task/Task"
+import CreateTask from "~/pages/task/CreateTask"
+import TaskDetail from "~/pages/task/TaskDetail"
 import Dashboard from "~/pages/dashboard/Dashboard"
+
 const protectedRoutes = [
     {
         path: '/dashboard',
@@ -30,6 +34,7 @@ const protectedRoutes = [
     {
         path: '/schedule',
         component: Schedule,
+
         layout: DefaultLayout,
         roles: [
             "Admin",
@@ -39,6 +44,7 @@ const protectedRoutes = [
             "Student"
         ]
     },
+
     {
         path: '/profile',
         component: Profile,
@@ -101,7 +107,40 @@ const protectedRoutes = [
             "TechnicalStaff",
             "Student"
         ]
-    }
+    },
+
+    {
+        path: '/task',
+        component: Task,
+        layout: DefaultLayout,
+        roles: [
+            "Admin",
+            "Instructor",
+            "HOD",
+            "TechnicalStaff"
+        ]
+    },
+
+    {
+        path: '/create-task',
+        component: CreateTask,
+        layout: DefaultLayout,
+        roles: [
+            "Admin"
+        ]
+    },
+
+    {
+        path: '/task-detail/:taskId',
+        component: TaskDetail,
+        layout: DefaultLayout,
+        roles: [
+            "Admin",
+            "Instructor",
+            "HOD",
+            "TechnicalStaff"
+        ]
+    },
 ]
 
 export default protectedRoutes
