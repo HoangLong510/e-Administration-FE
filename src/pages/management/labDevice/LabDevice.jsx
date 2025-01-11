@@ -18,7 +18,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveFromQueueIcon from '@mui/icons-material/RemoveFromQueue';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'; // Thêm dòng này
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'; 
 import { fetchLabDevicesApi, removeDevicesFromLabApi } from './service';
 import { useDispatch } from 'react-redux';
 import { setPopup } from '~/libs/features/popup/popupSlice';
@@ -28,31 +28,39 @@ import { Link, useParams } from 'react-router-dom';
 export default function LabDevices({ labName }) {
     const dispatch = useDispatch();
     const [devices, setDevices] = useState([]);
-    const [selectedDevices, setSelectedDevices] = useState([]);
+    const [selectedDeviceIds, setSelectedDeviceIds] = useState(new Set());
     const [searchValue, setSearchValue] = useState('');
 
     const handleToggleAll = (event) => {
+        const newSelectedDeviceIds = new Set(selectedDeviceIds);
         if (event.target.checked) {
-            setSelectedDevices(devices.map((device) => device.id));
+            devices.forEach((device) => {
+                const prefix = device.isSoftware ? 'software-' : 'device-';
+                newSelectedDeviceIds.add(prefix + device.id);
+            });
         } else {
-            setSelectedDevices([]);
+            devices.forEach((device) => {
+                const prefix = device.isSoftware ? 'software-' : 'device-';
+                newSelectedDeviceIds.delete(prefix + device.id);
+            });
         }
+        setSelectedDeviceIds(newSelectedDeviceIds);
     };
 
     const handleSearchChange = (event) => { setSearchValue(event.target.value); };
     const handleSearchKeyDown = (event) => { if (event.key === 'Enter') { handlefetchLabDevices(); } };
 
-    const handleToggle = (id) => {
-        const currentIndex = selectedDevices.indexOf(id);
-        const newSelected = [...selectedDevices];
+    const handleToggle = (device) => {
+        const newSelectedDeviceIds = new Set(selectedDeviceIds);
+        const prefix = device.isSoftware ? 'software-' : 'device-';
+        const idWithPrefix = prefix + device.id;
 
-        if (currentIndex === -1) {
-            newSelected.push(id);
+        if (newSelectedDeviceIds.has(idWithPrefix)) {
+            newSelectedDeviceIds.delete(idWithPrefix);
         } else {
-            newSelected.splice(currentIndex, 1);
+            newSelectedDeviceIds.add(idWithPrefix);
         }
-
-        setSelectedDevices(newSelected);
+        setSelectedDeviceIds(newSelectedDeviceIds);
     };
 
     const { labId } = useParams();
@@ -74,8 +82,9 @@ export default function LabDevices({ labName }) {
     };
 
     const handleRemoveDevicesFromLab = async () => {
+        const deviceIds = Array.from(selectedDeviceIds).map(id => id.replace('software-', '').replace('device-', ''));
         const data = {
-            deviceIds: selectedDevices,
+            deviceIds,
         };
         dispatch(setLoading());
         const res = await removeDevicesFromLabApi(data);
@@ -87,7 +96,7 @@ export default function LabDevices({ labName }) {
                 message: "Devices removed from lab successfully",
             };
             dispatch(setPopup(dataPopup));
-            setSelectedDevices([]);
+            setSelectedDeviceIds(new Set());
             handlefetchLabDevices();
         } else {
             const dataPopup = {
@@ -168,7 +177,7 @@ export default function LabDevices({ labName }) {
                             }}
                             onClick={handleRemoveDevicesFromLab}
                         >
-                            {`Remove ${selectedDevices.length > 0 ? `(${selectedDevices.length})` : ''}`}
+                            {`Remove ${selectedDeviceIds.size > 0 ? `(${selectedDeviceIds.size})` : ''}`}
                         </Button>
                         <Button
                             variant="contained"
@@ -194,8 +203,8 @@ export default function LabDevices({ labName }) {
                                 <TableCell padding="checkbox">
                                     <Checkbox
                                         color="primary"
-                                        indeterminate={selectedDevices.length > 0 && selectedDevices.length < devices.length}
-                                        checked={devices.length > 0 && selectedDevices.length === devices.length}
+                                        indeterminate={selectedDeviceIds.size > 0 && selectedDeviceIds.size < devices.length}
+                                        checked={devices.length > 0 && selectedDeviceIds.size === devices.length}
                                         onChange={handleToggleAll}
                                     />
                                 </TableCell>
@@ -209,8 +218,8 @@ export default function LabDevices({ labName }) {
                                     <TableCell padding="checkbox">
                                         <Checkbox
                                             color="primary"
-                                            checked={selectedDevices.indexOf(device.id) !== -1}
-                                            onChange={() => handleToggle(device.id)}
+                                            checked={selectedDeviceIds.has((device.isSoftware ? 'software-' : 'device-') + device.id)}
+                                            onChange={() => handleToggle(device)}
                                         />
                                     </TableCell>
                                     <TableCell>

@@ -12,10 +12,15 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { createSoftwareApi, updateSoftwareApi, getSoftwareByIdApi } from './service';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { setPopup } from '~/libs/features/popup/popupSlice';
+import { clearLoading, setLoading } from '~/libs/features/loading/loadingSlice';
 
 export default function AddSoftware() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -49,7 +54,10 @@ export default function AddSoftware() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (touched[name]) {
-      setErrors((prev) => ({ ...prev, [name]: value.trim() === '' ? `${name.charAt(0).toUpperCase() + name.slice(1)} is required` : '' }));
+      setErrors((prev) => ({
+        ...prev,
+        [name]: validateField(name, value)
+      }));
     }
   };
 
@@ -58,8 +66,23 @@ export default function AddSoftware() {
     setTouched((prev) => ({ ...prev, [name]: true }));
     setErrors((prev) => ({
       ...prev,
-      [name]: typeof formData[name] === 'string' && formData[name].trim() === '' ? `${name.charAt(0).toUpperCase() + name.slice(1)} is required` : '',
+      [name]: validateField(name, formData[name])
     }));
+  };
+
+  const validateField = (name, value) => {
+    let error = '';
+    if (name === 'licenseExpire') {
+      const selectedDate = new Date(value);
+      const currentDate = new Date();
+      if (selectedDate <= currentDate.setDate(currentDate.getDate() + 7)) {
+        error = 'License Expire date must be at least 7 days from today';
+      }
+    }
+    if (value.trim() === '') {
+      error = `${name.charAt(0).toUpperCase() + name.slice(1)} is required`;
+    }
+    return error;
   };
 
   const handleSubmit = async (event) => {
@@ -67,12 +90,10 @@ export default function AddSoftware() {
 
     const validationErrors = {};
     Object.keys(formData).forEach((key) => {
-      if (!formData[key] || (typeof formData[key] === 'string' && formData[key].trim() === '')) {
-        validationErrors[key] = `${key.charAt(0).toUpperCase() + key.slice(1)} is required`;
-      }
+      validationErrors[key] = validateField(key, formData[key]);
     });
 
-    if (Object.keys(validationErrors).length > 0) {
+    if (Object.keys(validationErrors).some(key => validationErrors[key])) {
       setErrors(validationErrors);
       setTouched(Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
       return;
@@ -85,8 +106,7 @@ export default function AddSoftware() {
       status: formData.status === 'active',
     };
 
-    console.log(data);
-
+    dispatch(setLoading());
     try {
       let response;
       if (id) {
@@ -94,15 +114,32 @@ export default function AddSoftware() {
       } else {
         response = await createSoftwareApi(data);
       }
+      dispatch(clearLoading());
       if (response.success) {
-        alert(id ? 'Software updated successfully!' : 'Software added successfully!');
+        dispatch(setPopup({ type: 'success', message: id ? 'Software updated successfully!' : 'Software added successfully!' }));
+        if (!id) {
+          setFormData({
+            name: '',
+            description: '',
+            licenseExpire: '',
+            status: '',
+          });
+          setErrors({});
+          setTouched({});
+        } else {
+          navigate('/management/software');
+        }
       } else {
-        console.error('Error response:', response);
-        alert(`Error: ${response.message}`);
+        if (response.errors) {
+          setErrors(response.errors);
+          setTouched(Object.keys(response.errors).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
+        }
+        dispatch(setPopup({ type: 'error', message: response.message }));
       }
     } catch (error) {
       console.error('Error response:', error.response);
-      alert(id ? 'An error occurred while updating the software.' : 'An error occurred while adding the software.');
+      dispatch(clearLoading());
+      dispatch(setPopup({ type: 'error', message: id ? 'An error occurred while updating the software.' : 'An error occurred while adding the software.' }));
     }
   };
 

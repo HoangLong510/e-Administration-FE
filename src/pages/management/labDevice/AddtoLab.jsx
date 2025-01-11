@@ -28,7 +28,7 @@ export default function AddToLab({ labName }) {
     const dispatch = useDispatch();
     const { labId } = useParams();
     const [devices, setDevices] = useState([]);
-    const [selectedDevices, setSelectedDevices] = useState([]);
+    const [selectedDeviceIds, setSelectedDeviceIds] = useState(new Set()); 
     const [searchValue, setSearchValue] = useState('');
 
     const handleSearchChange = (event) => { 
@@ -36,24 +36,32 @@ export default function AddToLab({ labName }) {
     };
 
     const handleToggleAll = (event) => {
+        const newSelectedDeviceIds = new Set(selectedDeviceIds);
         if (event.target.checked) {
-            setSelectedDevices(devices.map((device) => device.id));
+            devices.forEach((device) => {
+                const prefix = device.isSoftware ? 'software-' : 'device-';
+                newSelectedDeviceIds.add(prefix + device.id);
+            });
         } else {
-            setSelectedDevices([]);
+            devices.forEach((device) => {
+                const prefix = device.isSoftware ? 'software-' : 'device-';
+                newSelectedDeviceIds.delete(prefix + device.id);
+            });
         }
+        setSelectedDeviceIds(newSelectedDeviceIds);
     };
 
-    const handleToggle = (id) => {
-        const currentIndex = selectedDevices.indexOf(id);
-        const newSelected = [...selectedDevices];
+    const handleToggle = (device) => {
+        const newSelectedDeviceIds = new Set(selectedDeviceIds);
+        const prefix = device.isSoftware ? 'software-' : 'device-';
+        const idWithPrefix = prefix + device.id;
 
-        if (currentIndex === -1) {
-            newSelected.push(id);
+        if (newSelectedDeviceIds.has(idWithPrefix)) {
+            newSelectedDeviceIds.delete(idWithPrefix);
         } else {
-            newSelected.splice(currentIndex, 1);
+            newSelectedDeviceIds.add(idWithPrefix);
         }
-
-        setSelectedDevices(newSelected);
+        setSelectedDeviceIds(newSelectedDeviceIds);
     };
 
     const handlefetchLabDevices = async () => {
@@ -76,11 +84,11 @@ export default function AddToLab({ labName }) {
     };
 
     const handleAddDevicesToLab = async () => {
+        const deviceIds = Array.from(selectedDeviceIds).map(id => id.replace('software-', '').replace('device-', ''));
         const data = {
             labId,
-            deviceIds: selectedDevices,
+            deviceIds,
         };
-        console.log(data);
         dispatch(setLoading());
         const res = await addDevicesToLabApi(data); // Gọi API để thêm các thiết bị vào lab
         dispatch(clearLoading());
@@ -91,7 +99,7 @@ export default function AddToLab({ labName }) {
                 message: "Devices added to lab successfully",
             };
             dispatch(setPopup(dataPopup));
-            setSelectedDevices([]);
+            setSelectedDeviceIds(new Set());
             handlefetchLabDevices(); // Fetch the updated list
         } else {
             const dataPopup = {
@@ -162,7 +170,7 @@ export default function AddToLab({ labName }) {
                             }}
                             onClick={handleAddDevicesToLab} // Gọi hàm khi bấm nút Add
                         >
-                            {`Add ${selectedDevices.length > 0 ? `(${selectedDevices.length})` : ''}`}
+                            {`Add ${selectedDeviceIds.size > 0 ? `(${selectedDeviceIds.size})` : ''}`}
                         </Button>
                         <Button
                             variant="contained"
@@ -188,8 +196,8 @@ export default function AddToLab({ labName }) {
                                 <TableCell padding="checkbox">
                                     <Checkbox
                                         color="primary"
-                                        indeterminate={selectedDevices.length > 0 && selectedDevices.length < devices.length}
-                                        checked={devices.length > 0 && selectedDevices.length === devices.length}
+                                        indeterminate={selectedDeviceIds.size > 0 && selectedDeviceIds.size < devices.length}
+                                        checked={devices.length > 0 && selectedDeviceIds.size === devices.length}
                                         onChange={handleToggleAll}
                                     />
                                 </TableCell>
@@ -203,8 +211,8 @@ export default function AddToLab({ labName }) {
                                     <TableCell padding="checkbox">
                                         <Checkbox
                                             color="primary"
-                                            checked={selectedDevices.indexOf(device.id) !== -1}
-                                            onChange={() => handleToggle(device.id)}
+                                            checked={selectedDeviceIds.has((device.isSoftware ? 'software-' : 'device-') + device.id)}
+                                            onChange={() => handleToggle(device)}
                                         />
                                     </TableCell>
                                     <TableCell>
