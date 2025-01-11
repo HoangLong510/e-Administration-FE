@@ -39,7 +39,7 @@ const adminMenuItems = [
         icon: Diversity2Icon,
     },
     { 
-        label: "SoftWare",
+        label: "Software",
         href: `/management/software`,
         icon: SaveIcon,
     },
