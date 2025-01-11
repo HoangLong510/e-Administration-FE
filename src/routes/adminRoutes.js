@@ -29,7 +29,7 @@ const adminRoutes = [
     { path: '/management/devices/add-devices', component: AddDevices, layout: DefaultLayout },
     { path:'/management/devices/add-devices/:id?', component: AddDevices, layout: DefaultLayout },
     { path:'/management/software/add-software/:id?', component: AddSoftware, layout: DefaultLayout },
-    { path: '/management/software', component: Document, layout: DefaultLayout },
+    { path: '/management/software', component: Software, layout: DefaultLayout },
     { path: '/management/software/add-software', component: AddSoftware, layout: DefaultLayout },
     { path: '/management/document', component: Document, layout: DefaultLayout },
     { path: '/management/document/add-document', component: AddDocument, layout: DefaultLayout },
