@@ -7,10 +7,16 @@ import {
   InputLabel,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-// import { createDocumentApi } from './service';
-import { Link } from 'react-router-dom';
+import { createDocumentApi } from './service';
+import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { setPopup } from '~/libs/features/popup/popupSlice';
+import { clearLoading, setLoading } from '~/libs/features/loading/loadingSlice';
 
 export default function AddDocument() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
     name: '',
     file: null,
@@ -29,10 +35,15 @@ export default function AddDocument() {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    setFormData((prev) => ({ ...prev, file: file }));
-    if (touched.file) {
+    if (file && !validateFile(file)) {
+      setFormData((prev) => ({ ...prev, file: null }));
+      setErrors((prev) => ({ ...prev, file: 'File type is not supported. Only PDF is allowed' }));
+      document.getElementById("fileInput").value = null; // Reset file input
+    } else {
+      setFormData((prev) => ({ ...prev, file: file }));
       setErrors((prev) => ({ ...prev, file: file ? '' : 'File is required' }));
     }
+    setTouched((prev) => ({ ...prev, file: true }));
   };
 
   const handleBlur = (e) => {
@@ -66,21 +77,28 @@ export default function AddDocument() {
       data.append('file', formData.file);
     }
 
-    console.log([...data]);
-
+    dispatch(setLoading());
     try {
-      // const response = await createDocumentApi(data);
-      const response = { success: true }; // Mocked response for testing
+      const response = await createDocumentApi(data); // Gọi API thực tế
+      dispatch(clearLoading());
       if (response.success) {
-        alert('Document added successfully!');
+        dispatch(setPopup({ type: 'success', message: 'Document added successfully!' }));
+        navigate('/management/document');
       } else {
         console.error('Error response:', response);
-        alert(`Error: ${response.message}`);
+        dispatch(setPopup({ type: 'error', message: response.message }));
       }
     } catch (error) {
       console.error('Error response:', error.response);
-      alert('An error occurred while adding the document.');
+      dispatch(clearLoading());
+      dispatch(setPopup({ type: 'error', message: 'An error occurred while adding the document.' }));
     }
+  };
+
+  const validateFile = (file) => {
+    const validExtensions = ['pdf'];
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+    return validExtensions.includes(fileExtension);
   };
 
   return (
@@ -131,13 +149,15 @@ export default function AddDocument() {
             type="file"
             variant="outlined"
             required
-            inputProps={{ accept: 'application/pdf, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document' }}
+            inputProps={{ accept: 'application/pdf' }}
             onChange={handleFileChange}
             onBlur={handleBlur}
             error={touched.file && !!errors.file}
             helperText={touched.file && errors.file}
             sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
+            id="fileInput"
           />
+          <Typography variant="body2" id="fileName"></Typography>
         </Box>
 
         <Box sx={{ mt: 2 }}>

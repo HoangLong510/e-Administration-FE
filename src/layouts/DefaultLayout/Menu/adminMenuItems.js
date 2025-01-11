@@ -4,7 +4,7 @@ import RoomPreferencesRoundedIcon from '@mui/icons-material/RoomPreferencesRound
 import ClassRoundedIcon from '@mui/icons-material/ClassRounded';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import Diversity2Icon from '@mui/icons-material/Diversity2';
-
+import SaveIcon from '@mui/icons-material/Save';
 
 const adminMenuItems = [
     {
@@ -41,7 +41,7 @@ const adminMenuItems = [
     { 
         label: "SoftWare",
         href: `/management/software`,
-        icon: Diversity2Icon,
+        icon: SaveIcon,
     },
 ]
 

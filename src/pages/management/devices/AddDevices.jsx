@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -13,10 +13,15 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { createDeviceApi, updateDeviceApi, getDeviceByIdApi } from './service';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { setPopup } from '~/libs/features/popup/popupSlice';
+import { clearLoading, setLoading } from '~/libs/features/loading/loadingSlice';
 
 export default function AddDevices() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -58,10 +63,20 @@ export default function AddDevices() {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    setFormData((prev) => ({ ...prev, image: file }));
-    if (touched.image) {
+    const validImageTypes = [ 'image/jpeg', 'image/png'];
+
+    if (file && !validImageTypes.includes(file.type)) {
+      setErrors((prev) => ({ ...prev, image: 'Invalid image format. JPEG, and PNG are allowed.' }));
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } else {
+      setFormData((prev) => ({ ...prev, image: file }));
       setErrors((prev) => ({ ...prev, image: file ? '' : 'Image is required' }));
     }
+
+    setTouched((prev) => ({ ...prev, image: true }));
   };
 
   const handleBlur = (e) => {
@@ -100,6 +115,7 @@ export default function AddDevices() {
       data.append('Image', formData.image);
     }
 
+    dispatch(setLoading());
     try {
       let response;
       if (id) {
@@ -107,9 +123,12 @@ export default function AddDevices() {
       } else {
         response = await createDeviceApi(data);
       }
+      dispatch(clearLoading());
       if (response.success) {
-        alert(id ? 'Device updated successfully!' : 'Device added successfully!');
-        if (!id) {
+        dispatch(setPopup({ type: 'success', message: id ? 'Device updated successfully!' : 'Device added successfully!' }));
+        if (id) {
+          navigate('/management/devices');
+        } else {
           setFormData({
             name: '',
             type: '',
@@ -119,17 +138,21 @@ export default function AddDevices() {
           });
           setErrors({});
           setTouched({});
-        } else {
-          // Chuyển hướng về trang Device sau khi cập nhật thành công
-          navigate('/management/devices');
+          if (fileInputRef.current) {
+            fileInputRef.current.value = ''; // Reset file input
+          }
         }
       } else {
-        console.error('Error response:', response);
-        alert(`Error: ${response.message}`);
+        if (response.errors) {
+          setErrors(response.errors);
+          setTouched(Object.keys(response.errors).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
+        }
+        dispatch(setPopup({ type: 'error', message: response.message }));
       }
     } catch (error) {
       console.error('Error response:', error.response);
-      alert(id ? 'An error occurred while updating the device.' : 'An error occurred while adding the device.');
+      dispatch(clearLoading());
+      dispatch(setPopup({ type: 'error', message: id ? 'An error occurred while updating the device.' : 'An error occurred while adding the device.' }));
     }
   };
 
@@ -201,7 +224,6 @@ export default function AddDevices() {
           error={touched.description && !!errors.description}
           helperText={touched.description && errors.description}
           sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
-          slotProps={{ inputLabel: { shrink: true } }}
         />
 
         <FormControl fullWidth required error={touched.status && !!errors.status}>
@@ -232,6 +254,8 @@ export default function AddDevices() {
             error={touched.image && !!errors.image}
             helperText={touched.image && errors.image}
             sx={{ mt: 1 }}
+
+            inputRef={fileInputRef}
           />
         </Box>
 

@@ -244,8 +244,8 @@ function LabManager() {
         <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}>
           <Tabs value={tabValue} onChange={handleTabChange}>
             <Tab label={`All (${labs.length})`} />
-            <Tab label={`In Use (${labs.filter((lab) => lab.status).length})`} />
-            <Tab label={`Under Maintenance (${labs.filter((lab) => !lab.status).length})`} />
+            <Tab label={`Active (${labs.filter((lab) => lab.status).length})`} />
+            <Tab label={`Disable (${labs.filter((lab) => !lab.status).length})`} />
           </Tabs>
         </Box>
 

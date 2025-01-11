@@ -15,62 +15,86 @@ import {
     Grid,
     InputAdornment,
     Pagination,
-    Menu
+    Menu,
+    MenuItem
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import DownloadIcon from '@mui/icons-material/Download';
-// import { fetchDocumentsApi } from './service';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { fetchDocumentsApi, downloadDocumentApi } from './service'; // Import hàm downloadDocumentApi
 import { useDispatch } from 'react-redux';
 import { setPopup } from '~/libs/features/popup/popupSlice';
 import { clearLoading, setLoading } from '~/libs/features/loading/loadingSlice';
 import { Link } from 'react-router-dom';
+import DisableDocument from './DisableDocument'; // Import trang DisableDocument
 
 export default function Document() {
     const dispatch = useDispatch();
     const [firstRender, setFirstRender] = useState(true);
-    const [documents, setDocuments] = useState([
-        { name: 'Document 1', downloadUrl: '/downloads/document1.pdf' },
-        { name: 'Document 2', downloadUrl: '/downloads/document2.pdf' },
-        { name: 'Document 3', downloadUrl: '/downloads/document3.pdf' }
-    ]);
+    const [documents, setDocuments] = useState([]);
     const [searchValue, setSearchValue] = useState('');
     const [page, setPage] = useState(1);
     const [totalPage, setTotalPage] = useState(1);
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [selectedDocument, setSelectedDocument] = useState(null);
+    const [disableId, setDisableId] = useState(null);
+
+    const handleMenuOpen = (event, document) => {
+        setAnchorEl(event.currentTarget);
+        setSelectedDocument(document);
+    };
+
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+        setSelectedDocument(null);
+    };
 
     const handlePageChange = (event, value) => {
         setPage(value);
     };
 
-    const handlefetchDocuments = async () => {
-        const data = {
-            pageNumber: page,
-            searchValue
-        };
-        dispatch(setLoading());
-        // const res = await fetchDocumentsApi(data);
-        dispatch(clearLoading());
-        // Simulate fetching documents with seeded data
-        const res = {
-            success: true,
-            documents: [
-                { name: 'Document 1', downloadUrl: '/downloads/document1.pdf' },
-                { name: 'Document 2', downloadUrl: '/downloads/document2.pdf' },
-                { name: 'Document 3', downloadUrl: '/downloads/document3.pdf' }
-            ],
-            totalPages: 1
-        };
+    const handleDeleteRequest = (id) => {
+        setDisableId(id);
+        handleMenuClose();
+    };
 
-        console.log(res);
+    const handleDownload = async (id) => {
+        dispatch(setLoading());
+        const res = await downloadDocumentApi(id);
+        dispatch(clearLoading());
+
         if (res.success) {
-            setDocuments(res.documents);
-            setTotalPage(res.totalPages);
+            const blob = new Blob([res.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', res.fileName); // Tên tệp tải về
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
         } else {
-            const dataPopup = {
+            dispatch(setPopup({
                 type: 'error',
                 message: res.message
-            };
-            dispatch(setPopup(dataPopup));
+            }));
+        }
+    };
+
+    const handlefetchDocuments = async () => {
+        dispatch(setLoading());
+        const res = await fetchDocumentsApi({ searchValue, page, status: true });
+        dispatch(clearLoading());
+
+        if (res.success) {
+            setDocuments(res.documents || []);
+            setTotalPage(res.totalPages);
+        } else {
+            dispatch(setPopup({
+                type: 'error',
+                message: res.message
+            }));
         }
     };
 
@@ -81,7 +105,6 @@ export default function Document() {
     useEffect(() => {
         if (!firstRender) {
             setPage(1);
-            dispatch(setLoading());
             const handleSearchDocuments = setTimeout(async () => {
                 handlefetchDocuments();
             }, 500);
@@ -158,7 +181,8 @@ export default function Document() {
                         <TableHead>
                             <TableRow>
                                 <TableCell>Document</TableCell>
-                                <TableCell></TableCell>
+                                <TableCell>Upload Date</TableCell>
+                                <TableCell align="right">Action</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -167,16 +191,30 @@ export default function Document() {
                                     <TableCell component="th" scope="row">
                                         <Typography sx={{ fontSize: '15px', color: 'primary.main', fontWeight: 500 }}>{document.name}</Typography>
                                     </TableCell>
+                                    <TableCell>{new Date(document.uploadDate).toLocaleDateString()}</TableCell>
                                     <TableCell align='right'>
-                                        <IconButton component="a" href={document.downloadUrl} download>
-                                            <DownloadIcon />
+                                        <IconButton onClick={(e) => handleMenuOpen(e, document)}>
+                                            <MoreVertIcon />
                                         </IconButton>
+                                        <Menu
+                                            anchorEl={anchorEl}
+                                            open={Boolean(anchorEl)}
+                                            onClose={handleMenuClose}
+                                        >
+                                            <MenuItem onClick={() => handleDownload(selectedDocument?.id)}>
+                                                <DownloadIcon sx={{ mr: 1 }} /> Download
+                                            </MenuItem>
+                                            <MenuItem onClick={() => handleDeleteRequest(selectedDocument?.id)}>
+                                                <DeleteIcon sx={{ mr: 1 }} /> Delete
+                                            </MenuItem>
+                                        </Menu>
+
                                     </TableCell>
                                 </TableRow>
                             ))}
                             {documents.length === 0 && (
                                 <TableRow sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                                    <TableCell colSpan={2} sx={{ textAlign: 'center' }}>No data found</TableCell>
+                                    <TableCell colSpan={3} sx={{ textAlign: 'center' }}>No data found</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
@@ -193,6 +231,7 @@ export default function Document() {
                     showLastButton
                 />
             </Box>
+            <DisableDocument disableId={disableId} setDisableId={setDisableId} onDisableSuccess={handlefetchDocuments} /> {/* Truyền hàm handlefetchDocuments */}
         </Box>
     );
 }
