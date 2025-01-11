@@ -31,10 +31,7 @@ export const GetScheduleByIdAPI = async (id) => {
     return await apiRequest('get', `/schedule/schedule/${id}`);
 };
 
-// Get Schedules by Lab
-export const GetSchedulesByLabAPI = async (lab) => {
-    return await apiRequest('get', `/schedule/lab/${lab}`);
-};
+
 
 // Create Schedule API
 export const CreateScheduleAPI = async (scheduleData) => {
@@ -67,10 +64,8 @@ export const DeleteScheduleAPI = async (id) => {
     }
   };
 
-// Get Schedule by FullName
-export const GetScheduleByFullNameAPI = async (fullName) => {
-    return await apiRequest('get', `/schedule/fullname/${fullName}`);
-};
+
+
 export const ExportSchedulesToExcelAPI = async (userId) => {
   try {
       const response = await axios({
@@ -94,3 +89,31 @@ export const ExportSchedulesToExcelAPI = async (userId) => {
       };
   }
 };
+export const GetAllClassAPI = async () => {
+  return await apiRequest('get', `/schedule/allclass`);
+};
+export const GetAllLabAPI = async () => {
+  return await apiRequest('get', `/schedule/alllab`);
+};
+
+// Get Schedules by Lab
+export const GetSchedulesByLabAPI = async (lab) => {
+  return await apiRequest('get', `/schedule/lab/${lab}`);
+};
+// Get Schedule by FullName
+export const GetScheduleByFullNameAPI = async (fullName) => {
+  return await apiRequest('get', `/schedule/fullname/${fullName}`);
+};
+//Get Schedule by Lab and FullName
+export const GetScheduleByConditionAPI = async (Name, Lab) => {
+  let condition = '';
+  if (Name) {
+    condition += `?Name=${encodeURIComponent(Name)}`;
+  }
+  if (Lab) {
+    condition += condition ? `&Lab=${encodeURIComponent(Lab)}` : `?Lab=${encodeURIComponent(Lab)}`;
+  }
+
+  return await apiRequest('get', `/schedule/GetScheduleByCondition${condition}`);
+};
+

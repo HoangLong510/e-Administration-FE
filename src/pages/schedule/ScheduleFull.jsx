@@ -25,6 +25,7 @@ import {
 } from "./service";
 import { format } from "date-fns";
 import { useSelector } from "react-redux";
+
 export default function ScheduleFull() {
   const user = useSelector((state) => state.user.value);
   const [years, setYears] = useState([]);
@@ -32,143 +33,163 @@ export default function ScheduleFull() {
   const [weeks, setWeeks] = useState([]);
   const [week, setWeek] = useState(0);
   const [tabValue, setTabValue] = useState(0);
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
   // Generate year options
   useEffect(() => {
     const currentYear = new Date().getFullYear();
     const yearOptions = [];
-    for (let i = currentYear - 4; i <= currentYear; i++) {
+    for (let i = currentYear - 4; i <= currentYear + 2; i++) {
       yearOptions.push(i);
     }
     setYears(yearOptions);
   }, []);
   // Generate week options
-  useEffect(() => {
+  const generateWeeksForYear = (year) => {
     const weekOptions = [];
     let startDate = new Date(year, 0, 1);
     const endDate = new Date(year, 11, 31);
+    const dayOfWeek = startDate.getDay();
+    if (dayOfWeek !== 0) {
+      startDate.setDate(startDate.getDate() - dayOfWeek);
+    }
 
     while (startDate <= endDate) {
-      const weekStart = format(startDate, "dd/MM");
+      const weekStart = format(startDate, "dd/MM/yyyy");
       const weekEnd = format(
         new Date(startDate.getTime() + 6 * 24 * 60 * 60 * 1000),
-        "dd/MM"
+        "dd/MM/yyyy"
       );
-      weekOptions.push(`${weekStart}-${weekEnd}`);
+      //weekOptions: {label: dd/mm/yyyy-dd/mm/yyyy, startDate: DateTime(), endDate: DateTime()}
+      weekOptions.push({
+        label: `${weekStart} - ${weekEnd}`,
+        startDate: new Date(startDate),
+        endDate: new Date(startDate.getTime() + 6 * 24 * 60 * 60 * 1000),
+      });
       startDate.setDate(startDate.getDate() + 7);
     }
-
-    setWeeks(weekOptions);
+    return weekOptions;
+  };
+  useEffect(() => {
+    const weeksForYear = generateWeeksForYear(year);
+    setWeeks(weeksForYear);
   }, [year]);
 
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
-  };
-  const handleWeekChange = (event) => {
-    const weekValue = event.target.value;
-    setWeek(weekValue);
-  };
   const handleYearChange = (event) => {
-    setYear(event.target.value);
-    setWeek();
+    const newYear = event.target.value;
+    setYear(newYear);
+    setWeeks(generateWeeksForYear(newYear));
+    setWeek("");
   };
 
-  const handlePrevWeek = async () => {
-    const currentWeekIndex = weeks.indexOf(week);
-    if (currentWeekIndex > 0) {
-      setWeek(weeks[currentWeekIndex - 1]);
+  const handleWeekChange = (event) => {
+    const selectedWeek = weeks.find((w) => w.label === event.target.value);
+    if (selectedWeek) {
+      setWeek(selectedWeek);
     }
   };
-  const canGoPrevWeek = weeks.indexOf(week) > 0;
+
+  const handlePrevWeek = () => {
+    const currentIndex = weeks.findIndex((w) => w.label === week.label);
+
+    if (currentIndex > 0) {
+      setWeek(weeks[currentIndex - 1]);
+    } else {
+      const prevYear = year - 1;
+      const prevYearWeeks = generateWeeksForYear(prevYear);
+
+      setYear(prevYear);
+      setWeeks(prevYearWeeks);
+
+      setWeek(prevYearWeeks[prevYearWeeks.length - 2]);
+    }
+  };
+
   const handleNextWeek = () => {
-    const currentWeekIndex = weeks.indexOf(week);
-    if (currentWeekIndex < weeks.length - 1) {
-      setWeek(weeks[currentWeekIndex + 1]);
+    const currentIndex = weeks.findIndex((w) => w.label === week.label);
+
+    if (currentIndex < weeks.length - 1) {
+      setWeek(weeks[currentIndex + 1]);
+    } else {
+      const nextYear = year + 1;
+      const nextYearWeeks = generateWeeksForYear(nextYear);
+
+      setYear(nextYear);
+      setWeeks(nextYearWeeks);
+
+      setWeek(nextYearWeeks[1]);
     }
   };
-  const canGoNextWeek = weeks.indexOf(week) < weeks.length - 1;
+
   const handleCurrentWeek = () => {
     const currentYear = new Date().getFullYear();
-    setYear(currentYear);
     const currentDay = new Date();
-    const formattedDate = format(currentDay, "dd/MM");
 
-    for (const week of weeks) {
-      const [startRange, endRange] = week.split("-");
-      const [startDay, startMonth] = startRange.split("/");
-      const [endDay, endMonth] = endRange.split("/");
-      const startDate = new Date(
-        Date.UTC(currentYear, parseInt(startMonth) - 1, parseInt(startDay))
+    const currentDayOnly = new Date(
+      currentDay.getFullYear(),
+      currentDay.getMonth(),
+      currentDay.getDate()
+    );
+
+    const currentYearWeeks = generateWeeksForYear(currentYear);
+
+    let foundCurrentWeek = false;
+
+    for (const week of currentYearWeeks) {
+      const startDate = new Date(week.startDate);
+      const endDate = new Date(week.endDate);
+
+      const startDateOnly = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate()
+      );
+      const endDateOnly = new Date(
+        endDate.getFullYear(),
+        endDate.getMonth(),
+        endDate.getDate()
       );
 
-      const endDate = new Date(
-        Date.UTC(
-          parseInt(endMonth) < parseInt(startMonth)
-            ? currentYear + 1
-            : currentYear,
-          parseInt(endMonth) - 1,
-          parseInt(endDay)
-        )
-      );
-
-      const [currentDay, currentMonth] = formattedDate.split("/");
-      const checkDate = new Date(
-        Date.UTC(currentYear, parseInt(currentMonth) - 1, parseInt(currentDay))
-      );
-
-      if (checkDate >= startDate && checkDate <= endDate) {
+      if (currentDayOnly >= startDateOnly && currentDayOnly <= endDateOnly) {
+        setYear(currentYear);
+        setWeeks(currentYearWeeks);
         setWeek(week);
-        return;
+        foundCurrentWeek = true;
+        break;
       }
     }
+    if (!foundCurrentWeek) {
+      console.error("Current week not found in generated weeks.");
+    }
   };
+
   useEffect(() => {
     handleCurrentWeek();
   }, []);
-  const [daysOfWeek, setDaysOfWeek] = useState([]);
 
+  const [daysOfWeek, setDaysOfWeek] = useState([]);
   useEffect(() => {
     const days = getDaysInWeek(week);
     setDaysOfWeek(days);
   }, [week]);
 
   const getDaysInWeek = (week) => {
-    if (typeof week !== "string") {
-      console.error("Week is not a string", week);
+    if (!week || !week.startDate || !week.endDate) {
+      console.error("Invalid week data", week);
       return [];
     }
 
-    const [startRange, endRange] = week.split("-");
-    const [startDay, startMonth] = startRange.split("/");
-    const [endDay, endMonth] = endRange.split("/");
-
-    const currentYear = new Date().getFullYear();
-    const startDate = new Date(
-      Date.UTC(currentYear, parseInt(startMonth) - 1, parseInt(startDay))
-    );
-    const endDate = new Date(
-      Date.UTC(currentYear, parseInt(endMonth) - 1, parseInt(endDay))
-    );
-
-    const diffToSunday = startDate.getDay();
-    const adjustedStartDate = new Date(startDate);
-    adjustedStartDate.setDate(startDate.getDate() - diffToSunday);
-
-    const formatDate = (date) => {
-      const day = String(date.getDate()).padStart(2, "0");
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      return `${day}/${month}`;
-    };
-
     const days = [];
-    let currentDate = adjustedStartDate;
+    const startDate = new Date(week.startDate);
+    const endDate = new Date(week.endDate);
 
-    for (let i = 0; i < 7; i++) {
-      if (currentDate > endDate) break;
-
+    let currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
       days.push({
-        date: formatDate(currentDate),
+        date: format(currentDate, "dd/MM/yyyy"),
         dayOfWeek: currentDate.toLocaleString("en-us", { weekday: "long" }),
-        week: `${formatDate(adjustedStartDate)}-${formatDate(endDate)}`,
       });
       currentDate.setDate(currentDate.getDate() + 1);
     }
@@ -182,59 +203,68 @@ export default function ScheduleFull() {
     try {
       const res = await GetAllScheduleAPI();
       const formattedData = await formatScheduleData(res || [], year, week);
+
       setScheduleData(formattedData);
-    } catch (err) {}
+    } catch (err) {
+      console.error("Error fetching schedules:", err);
+    }
   };
+
   useEffect(() => {
     handleGetAllSchedule();
   }, [week, year]);
+
   const formatScheduleData = async (schedules, year, week) => {
     if (!schedules || !Array.isArray(schedules)) return {};
+  
     const groupedSchedules = {};
-    const [startRange, endRange] = week.split("-");
-    const [startDay, startMonth] = startRange.split("/").map(Number);
-    const [endDay, endMonth] = endRange.split("/").map(Number);
-    const startOfWeek = new Date(Date.UTC(year, startMonth - 1, startDay));
-    const endOfWeek = new Date(Date.UTC(year, endMonth - 1, endDay));
+  
+    const startOfWeek = new Date(week.startDate);
+    const endOfWeek = new Date(week.endDate);
     endOfWeek.setHours(23, 59, 59, 999);
-
+  
     try {
       const schedulePromises = schedules.map(async (schedule) => {
         const ID = schedule?.id;
         let fullname = "Unknown";
-
+  
         try {
           const ScheduleById = await GetScheduleByIdAPI(ID);
           fullname = ScheduleById?.fullName || "Unknown";
         } catch (err) {
           console.error(`Error fetching fullname for ID ${ID}:`, err);
         }
-
+  
         const updatedSchedule = {
           ...schedule,
           fullname,
         };
-
+  
         const startTime = new Date(schedule?.startTime);
         const endTime = new Date(schedule?.endTime);
-        const dayKey = startTime.toISOString().split("T")[0];
+        const dayKey = format(startTime, "dd/MM/yyyy");
+  
         if (startTime >= startOfWeek && endTime <= endOfWeek) {
           if (!groupedSchedules[dayKey]) {
             groupedSchedules[dayKey] = [];
           }
-
+  
           const status = getStatus(startTime, endTime);
           updatedSchedule.status = status;
-
+  
           groupedSchedules[dayKey].push(updatedSchedule);
         }
       });
-
+  
       await Promise.all(schedulePromises);
+  
+      for (let day in groupedSchedules) {
+        groupedSchedules[day].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+      }
     } catch (err) {
       console.error("Error processing schedules:", err);
     }
-
+  
     return groupedSchedules;
   };
 
@@ -275,19 +305,16 @@ export default function ScheduleFull() {
   };
 
   const getColorForStatus = (status) => {
-    switch (status) {
-      case "Past":
-        return "red";
-      case "Current":
-        return "green";
-      case "Upcoming":
-        return "orange";
-      case "-":
-        return "grey";
-      default:
-        return "grey";
-    }
+    const statusColors = {
+      Past: "red",
+      Current: "green",
+      Upcoming: "orange",
+      "-": "grey",
+    };
+
+    return statusColors[status] || "grey";
   };
+
   return (
     <>
       <Box sx={{ mt: 3 }}>
@@ -310,16 +337,16 @@ export default function ScheduleFull() {
                     ))}
                   </Select>
                 </FormControl>
-                <FormControl size="small" sx={{ minWidth: 120 }}>
+                <FormControl size="small" sx={{ minWidth: 300 }}>
                   <Select
-                    value={week}
+                    value={week?.label || ""}
                     onChange={handleWeekChange}
                     displayEmpty
                     inputProps={{ "aria-label": "Week" }}
                   >
-                    {weeks.slice(0, 10).map((weekOption) => (
-                      <MenuItem key={weekOption} value={weekOption}>
-                        {weekOption}
+                    {weeks.map((weekOption) => (
+                      <MenuItem key={weekOption.label} value={weekOption.label}>
+                        {weekOption.label}
                       </MenuItem>
                     ))}
                   </Select>
@@ -330,7 +357,6 @@ export default function ScheduleFull() {
                     onClick={handlePrevWeek}
                     color="primary"
                     aria-label="previous week"
-                    disabled={!canGoPrevWeek}
                   >
                     <ArrowLeft />
                   </IconButton>
@@ -346,7 +372,6 @@ export default function ScheduleFull() {
                     onClick={handleNextWeek}
                     color="primary"
                     aria-label="next week"
-                    disabled={!canGoNextWeek}
                   >
                     <ArrowRight />
                   </IconButton>
@@ -354,6 +379,7 @@ export default function ScheduleFull() {
               </Box>
             </Grid>
           </Grid>
+
           <TableContainer component={Paper} sx={{ mt: 2 }}>
             <Table>
               <TableHead>
@@ -367,7 +393,7 @@ export default function ScheduleFull() {
                       border: "1px solid #000",
                       padding: "12px",
                       borderRadius: "4px",
-                      textAlign: "center", // Align table header text to the center
+                      textAlign: "center",
                     }}
                   >
                     Slot
@@ -381,7 +407,7 @@ export default function ScheduleFull() {
                         color: "#fff",
                         border: "1px solid #000",
                         padding: "16px",
-                        textAlign: "center", // Align date header text to the center
+                        textAlign: "center",
                       }}
                     >
                       {day.dayOfWeek}
@@ -393,7 +419,13 @@ export default function ScheduleFull() {
               </TableHead>
 
               <TableBody>
-                {Array.from({ length: 2 }).map((_, slotIndex) => (
+                {Array.from({
+                  length: Math.max(
+                    ...daysOfWeek.map(
+                      (day) => scheduleData[day.date]?.length || 0
+                    )
+                  ),
+                }).map((_, slotIndex) => (
                   <TableRow key={`slot-${slotIndex}`}>
                     <TableCell
                       sx={{
@@ -404,24 +436,16 @@ export default function ScheduleFull() {
                         fontWeight: "bold",
                         backgroundColor: "primary.main",
                         color: "#fff",
-                        textAlign: "center", // Align slot label text to the center
+                        textAlign: "center",
                       }}
                     >
                       Slot {slotIndex + 1}
                     </TableCell>
+
                     {daysOfWeek.map((day) => {
-                      const formattedDate = `${year}-${
-                        day.date.split("/")[1]
-                      }-${day.date.split("/")[0]}`;
+                      const formattedDate = day.date;
                       const daySchedule = scheduleData[formattedDate] || [];
                       const slotData = daySchedule[slotIndex];
-
-                      const getStatusColor = (status) => {
-                        if (status === "Past") return "red";
-                        if (status === "Current") return "orange";
-                        if (status === "Upcoming") return "green";
-                        return "black";
-                      };
 
                       return (
                         <TableCell
@@ -436,7 +460,7 @@ export default function ScheduleFull() {
                               cursor: "pointer",
                             },
                             backgroundColor: "#fafafa",
-                            textAlign: "left", // Align content inside the cell to the left
+                            textAlign: "left",
                           }}
                         >
                           <Box sx={{ p: 1, backgroundColor: "#f0f0f0" }}>
@@ -500,7 +524,7 @@ export default function ScheduleFull() {
                                     variant="body2"
                                     sx={{
                                       fontSize: 16,
-                                      color: getStatusColor(slotData.status),
+                                      color: getColorForStatus(slotData.status),
                                     }}
                                   >
                                     <strong>Status:</strong> {slotData.status}
@@ -508,7 +532,12 @@ export default function ScheduleFull() {
                                 </Grid>
                               </Grid>
                             ) : (
-                              "-"
+                              <Typography
+                                variant="body2"
+                                sx={{ fontSize: 16, textAlign: "center" }}
+                              >
+                                -
+                              </Typography>
                             )}
                           </Box>
                         </TableCell>
