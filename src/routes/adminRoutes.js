@@ -21,19 +21,9 @@ const adminRoutes = [
     { path: '/management/lab', component: Lab, layout: DefaultLayout },
     { path: '/management/user/create', component: CreateUser, layout: DefaultLayout },
     { path: '/management/user/edit/:userId', component: EditUser, layout: DefaultLayout },
-    { path: '/management/class', component: Class, layout: DefaultLayout },
-<<<<<<< Updated upstream
-=======
-    { path: '/management/document', component: Document, layout: DefaultLayout },
->>>>>>> Stashed changes
     { path: '/management/department', component: Department, layout: DefaultLayout },
     { path: "/management/class/:classId/users", component: ListUser, layout: DefaultLayout },
-    { path: "/management/software", component: Software, layout: DefaultLayout },
-<<<<<<< Updated upstream
-
-=======
     // { path: '/management/feedback', component: Feedbacks, layout: DefaultLayout },
-    { path: "/management/class/:classId/users", component: ListUser, layout: DefaultLayout },
     { path: '/management/class', component: Class, layout: DefaultLayout },
     { path: '/management/devices', component: Devices, layout: DefaultLayout },
     { path: '/management/devices/add-devices', component: AddDevices, layout: DefaultLayout },
@@ -45,7 +35,6 @@ const adminRoutes = [
     { path: '/management/document/add-document', component: AddDocument, layout: DefaultLayout },
     { path: '/management/labdevice/add-to-lab/:labId', component: AddToLab, layout: DefaultLayout },
     { path:'/management/labdevice/:labId', component: LabDevices, layout: DefaultLayout },
->>>>>>> Stashed changes
 ]
 
 export default adminRoutes
