@@ -8,12 +8,14 @@ import {
   fetchTotalPendingReports,
   fetchLabsStatusSummary,
   fetchReportsForCurrentYear,
+  fetchExpiredSoftwareApi
 } from "./service";
 
 const Dashboard = () => {
   const theme = useTheme();
   const [totalUsers, setTotalUsers] = useState(0);
   const [totalPendingReports, setTotalPendingReports] = useState(0);
+  const [expiredSoftwareCount, setExpiredSoftwareCount] = useState(0);
   const [activeLabs, setActiveLabs] = useState(0);
   const [inactiveLabs, setInactiveLabs] = useState(0);
   const [reportCounts, setReportCounts] = useState([]);
@@ -58,10 +60,20 @@ const Dashboard = () => {
       setIsLoading(false);
     };
 
+    const getCountExpiredSoftware = async () => {
+      const result = await fetchExpiredSoftwareApi();
+      if (result.success) {
+        setExpiredSoftwareCount(result.count);
+      } else {
+        console.error(result.message);
+      }
+    }
+
     getTotalUsers();
     getTotalPendingReports();
     getLabsStatus();
     getReportsForCurrentYear();
+    getCountExpiredSoftware();
   }, []);
 
   const pieData = {
@@ -199,7 +211,7 @@ const Dashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Software Expiring Soon"
-            value={30}
+            value={expiredSoftwareCount}
             icon={<Devices />}
             color={theme.palette.warning.main}
           />

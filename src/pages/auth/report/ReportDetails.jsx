@@ -139,16 +139,20 @@ export default function ReportDetails() {
     if (report && isInProgress) {
       setLoading(true);
       try {
-        const response = await updateReportStatus(report.id, 1);
-        if (response && response.success) {
-          navigate(`/create-task?reportId=${report.id}`);
+        if (report.status !== 1) {
+          const response = await updateReportStatus(report.id, 1);
+          if (response && response.success) {
+            navigate(`/create-task?reportId=${report.id}`);
+          } else {
+            dispatch(
+              setPopup({
+                type: "error",
+                message: response?.message || "Error creating task!",
+              })
+            );
+          }
         } else {
-          dispatch(
-            setPopup({
-              type: "error",
-              message: response?.message || "Error creating task!",
-            })
-          );
+          navigate(`/create-task?reportId=${report.id}`);
         }
       } catch (error) {
         dispatch(
@@ -176,6 +180,7 @@ export default function ReportDetails() {
   return (
     <StyledPaper elevation={8}>
       <Grid container spacing={3}>
+        {/* Tiêu đề và trạng thái */}
         <Grid item xs={12}>
           <Box
             display="flex"
@@ -191,32 +196,40 @@ export default function ReportDetails() {
             />
           </Box>
         </Grid>
+
+        {/* Nội dung báo cáo */}
         <Grid item xs={12}>
           <Typography variant="h6">{report.title}</Typography>
           <Typography variant="subtitle2" color="textSecondary">
             Sent by {report.senderFullName}
           </Typography>
         </Grid>
+
         <Grid item xs={12}>
           <Divider />
         </Grid>
+
         <Grid item xs={12}>
           <Typography variant="h6" gutterBottom>
             Description
           </Typography>
           <Typography variant="body1">{report.content}</Typography>
         </Grid>
+
         <Grid item xs={12}>
           <Divider />
         </Grid>
+
         <Grid item xs={12}>
           <Typography variant="body2" color="textSecondary">
             Created At: {new Date(report.creationTime).toLocaleString()}
           </Typography>
         </Grid>
+
         <Grid item xs={12}>
           <Divider />
         </Grid>
+
         <Grid item xs={12}>
           {report?.images?.length > 0 ? (
             <Box>
@@ -250,45 +263,56 @@ export default function ReportDetails() {
           )}
         </Grid>
 
-        {role === "Admin" && report.status === "Pending" && (
-          <Grid item xs={12}>
-            <StyledButton
-              variant="contained"
-              onClick={handleStatusChange}
-              color="primary"
-              fullWidth
-              disabled={loading}
-            >
-              {loading ? <CircularProgress size={24} /> : "Move to In Progress"}
-            </StyledButton>
-          </Grid>
-        )}
-        {role === "Admin" && isInProgress && (
-          <Grid item xs={12}>
-            <StyledButton
-              variant="contained"
-              onClick={handleCreateTask}
-              color="secondary"
-              fullWidth
-              startIcon={<TaskIcon />}
-            >
-              Create Task
-            </StyledButton>
-          </Grid>
-        )}
+        <Grid item xs={12}>
+          <Divider />
+        </Grid>
 
         <Grid item xs={12}>
-          <StyledButton
-            variant="outlined"
-            onClick={handleBack}
-            color="primary"
-            fullWidth
-            startIcon={<ArrowBackIcon />}
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
           >
-            Back to Reports List
-          </StyledButton>
+            <StyledButton
+              variant="outlined"
+              onClick={handleBack}
+              color="primary"
+              startIcon={<ArrowBackIcon />}
+            >
+              Back to Reports List
+            </StyledButton>
+
+            {role === "Admin" && report.status === "Pending" && (
+              <StyledButton
+                variant="contained"
+                onClick={handleStatusChange}
+                color="primary"
+                disabled={loading}
+              >
+                {loading ? (
+                  <CircularProgress size={24} />
+                ) : (
+                  "Move to In Progress"
+                )}
+              </StyledButton>
+            )}
+            {role === "Admin" && isInProgress && (
+              <StyledButton
+                variant="contained"
+                onClick={handleCreateTask}
+                color="secondary"
+                startIcon={<TaskIcon />}
+              >
+                Create Task
+              </StyledButton>
+            )}
+          </Box>
         </Grid>
       </Grid>
+      <Grid item xs={12}>
+        <Divider />
+      </Grid>
+
       {/* Comments Section */}
       <Grid item xs={12}>
         <Typography variant="h6" gutterBottom>
@@ -314,10 +338,8 @@ export default function ReportDetails() {
         </List>
       </Grid>
 
-      {/* Comments and Add Comment Section */}
       <StyledPaper elevation={8} sx={{ mt: 4 }}>
         <Grid container spacing={3}>
-          {/* Add Comment Section */}
           <Grid item xs={12}>
             <Typography variant="h6" gutterBottom>
               Add a Comment
