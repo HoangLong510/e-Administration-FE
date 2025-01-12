@@ -12,8 +12,7 @@ import Software from "~/pages/management/software/Software"
 import AddSoftware from "~/pages/management/software/AddSoftwares"
 import LabDevices from "~/pages/management/labDevice/LabDevice"
 import AddToLab from "~/pages/management/labDevice/AddtoLab"
-import AddDocument from "~/pages/management/document/AddDocument"
-import Document from "~/pages/management/document/Documents"
+
 
 
 const adminRoutes = [
@@ -31,8 +30,6 @@ const adminRoutes = [
     { path:'/management/software/add-software/:id?', component: AddSoftware, layout: DefaultLayout },
     { path: '/management/software', component: Software, layout: DefaultLayout },
     { path: '/management/software/add-software', component: AddSoftware, layout: DefaultLayout },
-    { path: '/management/document', component: Document, layout: DefaultLayout },
-    { path: '/management/document/add-document', component: AddDocument, layout: DefaultLayout },
     { path: '/management/labdevice/add-to-lab/:labId', component: AddToLab, layout: DefaultLayout },
     { path:'/management/labdevice/:labId', component: LabDevices, layout: DefaultLayout },
 ]

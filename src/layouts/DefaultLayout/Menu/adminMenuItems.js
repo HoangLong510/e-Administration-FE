@@ -27,12 +27,6 @@ const adminMenuItems = [
         href: `/management/class`,
         icon: ClassRoundedIcon,
     },
-    {
-
-        label: "Document",
-        href: `/management/document`,
-        icon: MenuBookIcon,
-    },
     { 
         label: "Departments",
         href: `/management/department`,

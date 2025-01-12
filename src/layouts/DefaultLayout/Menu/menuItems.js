@@ -3,6 +3,7 @@ import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded'
 import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded'
 import DesktopWindowsRoundedIcon from '@mui/icons-material/DesktopWindowsRounded'
 import ReportGmailerrorredRoundedIcon from '@mui/icons-material/ReportGmailerrorredRounded';
+import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 
 const menuItems = [
     {
@@ -26,6 +27,17 @@ const menuItems = [
         label: "Schedule",
         href: `/schedule`,
         icon: CalendarMonthRoundedIcon,
+        role: [
+            "Admin",
+            "Instructor",
+            "HOD",
+            "Student",
+        ]
+    },
+    {
+        label: "Document",
+        href: `/document`,
+        icon: AutoStoriesIcon,
         role: [
             "Admin",
             "Instructor",

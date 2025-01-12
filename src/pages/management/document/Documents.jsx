@@ -23,14 +23,18 @@ import AddIcon from '@mui/icons-material/Add';
 import DownloadIcon from '@mui/icons-material/Download';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { fetchDocumentsApi, downloadDocumentApi } from './service'; // Import hàm downloadDocumentApi
+import { fetchDocumentsApi, downloadDocumentApi } from './service';
 import { useDispatch } from 'react-redux';
 import { setPopup } from '~/libs/features/popup/popupSlice';
 import { clearLoading, setLoading } from '~/libs/features/loading/loadingSlice';
 import { Link } from 'react-router-dom';
-import DisableDocument from './DisableDocument'; // Import trang DisableDocument
+import { useSelector } from "react-redux";
+import DisableDocument from './DisableDocument'; 
 
 export default function Document() {
+
+    const user = useSelector((state) => state.user.value);
+
     const dispatch = useDispatch();
     const [firstRender, setFirstRender] = useState(true);
     const [documents, setDocuments] = useState([]);
@@ -70,7 +74,7 @@ export default function Document() {
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', res.fileName); // Tên tệp tải về
+            link.setAttribute('download', res.fileName); 
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -160,8 +164,9 @@ export default function Document() {
                             }}
                         />
                     </Grid>
+                    {(user.data.role === "Admin" || user.data.role === "Instructor") && (
                     <Grid item xs={12} sm={12} md={7} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <Button component={Link} to='/management/document/add-document'
+                        <Button component={Link} to='/document/add-document'
                             variant="contained"
                             color="primary"
                             startIcon={<AddIcon />}
@@ -174,8 +179,9 @@ export default function Document() {
                         >
                             New Document
                         </Button>
-                    </Grid>
+                    </Grid>)}
                 </Grid>
+                
                 <TableContainer component={Paper} elevation={0}>
                     <Table>
                         <TableHead>
@@ -204,9 +210,11 @@ export default function Document() {
                                             <MenuItem onClick={() => handleDownload(selectedDocument?.id)}>
                                                 <DownloadIcon sx={{ mr: 1 }} /> Download
                                             </MenuItem>
+                                            {(user.data.role === "Admin")&&(
                                             <MenuItem onClick={() => handleDeleteRequest(selectedDocument?.id)}>
                                                 <DeleteIcon sx={{ mr: 1 }} /> Delete
                                             </MenuItem>
+                                        )}
                                         </Menu>
 
                                     </TableCell>
@@ -231,7 +239,7 @@ export default function Document() {
                     showLastButton
                 />
             </Box>
-            <DisableDocument disableId={disableId} setDisableId={setDisableId} onDisableSuccess={handlefetchDocuments} /> {/* Truyền hàm handlefetchDocuments */}
+            <DisableDocument disableId={disableId} setDisableId={setDisableId} onDisableSuccess={handlefetchDocuments} />
         </Box>
     );
 }

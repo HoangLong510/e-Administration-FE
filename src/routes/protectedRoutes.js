@@ -10,6 +10,8 @@ import CreateTask from "~/pages/task/CreateTask"
 import TaskDetail from "~/pages/task/TaskDetail"
 import Dashboard from "~/pages/dashboard/Dashboard"
 import EditTask from "~/pages/task/EditTask"
+import Document from "~/pages/management/Document/Documents"
+import AddDocument from "~/pages/management/Document/AddDocument"
 
 const protectedRoutes = [
     {
@@ -68,6 +70,26 @@ const protectedRoutes = [
             "Instructor",
             "HOD",
             "TechnicalStaff",
+            "Student"
+        ]
+    },
+    {
+        path: '/document',
+        component: Document,
+        layout: DefaultLayout,
+        roles: [
+            "Admin",
+            "Instructor",
+            "Student"
+        ]
+    },
+    {
+        path: '/document/add-document',
+        component: AddDocument,
+        layout: DefaultLayout,
+        roles: [
+            "Admin",
+            "Instructor",
             "Student"
         ]
     },
