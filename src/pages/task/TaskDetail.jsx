@@ -256,7 +256,7 @@ export default function TaskDetail() {
                 </Box>
 
                 <Box display="flex" gap={2} sx={{ flexDirection: { xs: 'column', md: 'row' } }}>
-                    {task && task.status === 'Pending' && (
+                    {task && task.status === 'Pending' && user.data.role !== 'Admin' && (
                         <Button
                             onClick={() => handleChangeTaskStatus()}
                             disabled={loading}
@@ -267,7 +267,7 @@ export default function TaskDetail() {
                             In Progress
                         </Button>
                     )}
-                    {task && task.status === 'InProgress' && (
+                    {task && task.status === 'InProgress' && user.data.role !== 'Admin' && (
                         <Button
                             onClick={() => handleChangeTaskStatus()}
                             disabled={loading}
