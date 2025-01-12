@@ -66,6 +66,23 @@ export const disableLabApi = async (id) => {
     };
     }
 };
+export const checkNameExistsApi = async (name) => {
+    try {
+        const res = await axios.get(`${API_URL}/check-name-exists`, { params: { name } });
+        return res.data;
+    } catch (error) {
+        return handleApiError(error);
+    }
+};
+
+export const isLabNameUniqueApi = async (name, labId) => {
+    try {
+        const res = await axios.get(`${API_URL}/is-lab-name-unique`, { params: { name, labId } });
+        return res.data;
+    } catch (error) {
+        return handleApiError(error);
+    }
+};
 
 export const updateLabApi = async (id, data) => {
     try {

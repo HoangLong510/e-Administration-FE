@@ -77,94 +77,92 @@ export default function AddSoftware() {
   const validateField = (name, value) => {
     let error = '';
     if (name === 'licenseExpire') {
-      const selectedDate = new Date(value);
-      const currentDate = new Date();
-      if (selectedDate < currentDate.setHours(0, 0, 0, 0)) {
-        error = 'License Expire date cannot be earlier than today';
-      }
+        const selectedDate = new Date(value);
+        const currentDate = new Date();
+        if (selectedDate < currentDate.setHours(0, 0, 0, 0)) {
+            error = 'License Expire date cannot be earlier than today';
+        }
     }
     if (value.trim() === '') {
-      error = `${name.charAt(0).toUpperCase() + name.slice(1)} is required`;
+        error = `${name.charAt(0).toUpperCase() + name.slice(1)} is required`;
     }
     return error;
+};
+
+
+const handleSubmit = async (event) => {
+  event.preventDefault();
+
+  const validationErrors = {};
+  Object.keys(formData).forEach((key) => {
+      validationErrors[key] = validateField(key, formData[key]);
+  });
+
+  if (Object.keys(validationErrors).some(key => validationErrors[key])) {
+      setErrors(validationErrors);
+      setTouched(Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
+      return;
+  }
+
+  const data = {
+      name: formData.name,
+      description: formData.description,
+      licenseExpire: formData.licenseExpire,
+      status: formData.status === 'active',
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  // Check if LicenseExpire is valid
+  const currentDate = new Date();
+  const selectedDate = new Date(formData.licenseExpire);
+  if (selectedDate < currentDate.setHours(0, 0, 0, 0)) {
+      setErrors((prev) => ({
+          ...prev,
+          licenseExpire: 'License Expire date cannot be earlier than today'
+      }));
+      setTouched((prev) => ({
+          ...prev,
+          licenseExpire: true
+      }));
+      return;
+  }
 
-    const validationErrors = {};
-    Object.keys(formData).forEach((key) => {
-        validationErrors[key] = validateField(key, formData[key]);
-    });
+  dispatch(setLoading());
+  try {
+      let response;
+      if (id) {
+          response = await updateSoftwareApi(id, data);
+      } else {
+          response = await createSoftwareApi(data);
+      }
+      dispatch(clearLoading());
+      if (response.success) {
+          dispatch(setPopup({ type: 'success', message: id ? 'Software updated successfully!' : 'Software added successfully!' }));
+          if (!id) {
+              setFormData({
+                  name: '',
+                  description: '',
+                  licenseExpire: '',
+                  status: '',
+              });
+              setErrors({});
+              setTouched({});
+          } else {
+              navigate('/management/software');
+          }
+      } else {
+          if (response.errors) {
+              setErrors(response.errors);
+              setTouched(Object.keys(response.errors).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
+          }
+          dispatch(setPopup({ type: 'error', message: response.message }));
+      }
+  } catch (error) {
+      console.error('Error response:', error.response);
+      dispatch(clearLoading());
+      dispatch(setPopup({ type: 'error', message: id ? 'An error occurred while updating the software.' : 'An error occurred while adding the software.' }));
+  }
+};
 
-    if (Object.keys(validationErrors).some(key => validationErrors[key])) {
-        setErrors(validationErrors);
-        setTouched(Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
-        return;
-    }
-
-    const data = {
-        name: formData.name,
-        description: formData.description,
-        licenseExpire: formData.licenseExpire,
-        status: formData.status === 'active',
-    };
-
-    // Check if LicenseExpire has changed and is valid
-    if (id && formData.licenseExpire === originalLicenseExpire) {
-        delete data.licenseExpire;  
-    } else {
-        const currentDate = new Date();
-        const selectedDate = new Date(formData.licenseExpire);
-        if (selectedDate < currentDate.setHours(0, 0, 0, 0)) {
-            setErrors((prev) => ({
-                ...prev,
-                licenseExpire: 'License Expire date cannot be earlier than today'
-            }));
-            setTouched((prev) => ({
-                ...prev,
-                licenseExpire: true
-            }));
-            return;
-        }
-    }
-
-    dispatch(setLoading());
-    try {
-        let response;
-        if (id) {
-            response = await updateSoftwareApi(id, data);
-        } else {
-            response = await createSoftwareApi(data);
-        }
-        dispatch(clearLoading());
-        if (response.success) {
-            dispatch(setPopup({ type: 'success', message: id ? 'Software updated successfully!' : 'Software added successfully!' }));
-            if (!id) {
-                setFormData({
-                    name: '',
-                    description: '',
-                    licenseExpire: '',
-                    status: '',
-                });
-                setErrors({});
-                setTouched({});
-            } else {
-                navigate('/management/software');
-            }
-        } else {
-            if (response.errors) {
-                setErrors(response.errors);
-                setTouched(Object.keys(response.errors).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
-            }
-            dispatch(setPopup({ type: 'error', message: response.message }));
-        }
-    } catch (error) {
-        console.error('Error response:', error.response);
-        dispatch(clearLoading());
-        dispatch(setPopup({ type: 'error', message: id ? 'An error occurred while updating the software.' : 'An error occurred while adding the software.' }));
-    }
-  };
 
   return (
     <Box sx={{ maxWidth: 1200, margin: '0 auto', p: 3, bgcolor: '#fff', borderRadius: '10px' }}>
