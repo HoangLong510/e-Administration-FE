@@ -51,7 +51,6 @@ const protectedRoutes = [
         component: Profile,
         layout: DefaultLayout,
         roles: [
-            "Admin",
             "Instructor",
             "HOD",
             "TechnicalStaff",

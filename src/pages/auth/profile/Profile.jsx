@@ -24,7 +24,7 @@ export default function Profile() {
     email: "",
     address: "",
   });
-  const [initialData, setInitialData] = useState({}); 
+  const [initialData, setInitialData] = useState({});
   const [avatarFile, setAvatarFile] = useState(null);
   const [className, setClassName] = useState(null);
   const [errors, setErrors] = useState({
@@ -209,7 +209,7 @@ export default function Profile() {
           email: response.user.email,
           address: response.user.address,
         });
-        
+
         dispatch(
           setPopup({
             type: "success",
@@ -250,242 +250,228 @@ export default function Profile() {
   }
 
   return (
-    <Box sx={{ padding: 4 }}>
-      <Card sx={{ maxWidth: 1200, margin: "0 auto", padding: 3, boxShadow: 3 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={4}>
-            <Box
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              flexDirection="column"
-              mt={4}
-            >
-              <Avatar
-                alt={profile.fullName}
-                src={
-                  avatarFile
-                    ? URL.createObjectURL(avatarFile)
-                    : profile.avatar
-                    ? `${import.meta.env.VITE_SERVER_URL}/uploads/${
-                        profile.avatar
-                      }`
+    <Box sx={{
+      padding: '40px 20px',
+      minHeight: '100%',
+      borderRadius: '10px',
+      bgcolor: '#fff',
+      border: '1px solid #e0e0e0',
+    }}>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={4}>
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            flexDirection="column"
+            mt={4}
+          >
+            <Avatar
+              alt={profile.fullName}
+              src={
+                avatarFile
+                  ? URL.createObjectURL(avatarFile)
+                  : profile.avatar
+                    ? `${import.meta.env.VITE_SERVER_URL}/uploads/${profile.avatar
+                    }`
                     : "/default-avatar.png"
-                }
-                sx={{
-                  width: 200,
-                  height: 200,
-                  borderRadius: "50%",
-                  border: "5px solid #1976d2",
-                  boxShadow: 4,
-                }}
-              />
-              <Box textAlign="center" mt={2}>
-                <Typography variant="h5" fontWeight="bold">
-                  {profile.fullName}
-                </Typography>
-                <Typography
-                  variant="body1"
-                  color="textSecondary"
-                  fontWeight="light"
-                >
-                  @{profile.username}
-                </Typography>
-              </Box>
+              }
+              sx={{
+                width: 200,
+                height: 200,
+                borderRadius: "50%",
+                boxShadow: 4,
+              }}
+            />
+            <Box textAlign="center" mt={2}>
+              <Typography sx={{
+                fontSize: '16px',
+                color: '#000',
+                fontWeight: 500
+              }}>
+                {profile.fullName}
+              </Typography>
+              <Typography
+                variant="body1"
+                color="textSecondary"
+                fontWeight="light"
+              >
+                @{profile.username}
+              </Typography>
             </Box>
+          </Box>
 
-            {/* Điều kiện hiển thị nút chỉnh sửa avatar */}
-            {isEditing && (
-              <Box textAlign="center" mt={2}>
-                <Button variant="contained" component="label">
-                  Change Avatar
-                  <input type="file" hidden onChange={handleAvatarChange} />
-                </Button>
-              </Box>
-            )}
-          </Grid>
+          {/* Điều kiện hiển thị nút chỉnh sửa avatar */}
+          {isEditing && (
+            <Box textAlign="center" mt={2}>
+              <Button variant="contained" component="label">
+                Change Avatar
+                <input type="file" hidden onChange={handleAvatarChange} />
+              </Button>
+            </Box>
+          )}
+        </Grid>
 
-          <Grid item xs={12} md={8}>
-            <Typography variant="h6" color="primary" fontWeight="bold">
-              Profile Details
-            </Typography>
-            <Paper
-              sx={{ padding: 3, borderRadius: 2, boxShadow: 2, marginTop: 2 }}
-            >
-              <Box>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
-                    <div>
-                      <Typography variant="body1" sx={{ marginBottom: 1 }}>
-                        <strong>Email</strong>
-                      </Typography>
-                      {isEditing ? (
-                        <TextField
-                          name="email"
-                          value={formData.email || ""}
-                          onChange={handleInputChange}
-                          fullWidth
-                          disabled={!isEditing}
-                          error={!!errors.email}
-                          helperText={errors.email}
-                          variant="outlined"
-                        />
-                      ) : (
-                        <Typography variant="body2">{profile.email}</Typography>
-                      )}
-                    </div>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <div>
-                      <Typography variant="body1" sx={{ marginBottom: 1 }}>
-                        <strong>Phone</strong>
-                      </Typography>
-                      {isEditing ? (
-                        <TextField
-                          name="phone"
-                          value={formData.phone || ""}
-                          onChange={handleInputChange}
-                          fullWidth
-                          disabled={!isEditing}
-                          error={!!errors.phone}
-                          helperText={errors.phone}
-                          variant="outlined"
-                        />
-                      ) : (
-                        <Typography variant="body2">{profile.phone}</Typography>
-                      )}
-                    </div>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <div>
-                      <Typography variant="body1" sx={{ marginBottom: 1 }}>
-                        <strong>Address</strong>
-                      </Typography>
-                      {isEditing ? (
-                        <TextField
-                          name="address"
-                          value={formData.address || ""}
-                          onChange={handleInputChange}
-                          fullWidth
-                          disabled={!isEditing}
-                          error={!!errors.address}
-                          helperText={errors.address}
-                          variant="outlined"
-                        />
-                      ) : (
-                        <Typography variant="body2">
-                          {profile.address}
-                        </Typography>
-                      )}
-                    </div>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <div>
-                      <Typography variant="body1" sx={{ marginBottom: 1 }}>
-                        <strong>Gender</strong>
-                      </Typography>
-                      {isEditing ? (
-                        <TextField
-                          name="gender"
-                          value={profile.gender}
-                          onChange={handleInputChange}
-                          fullWidth
-                          disabled
-                        />
-                      ) : (
-                        <Typography variant="body2">
-                          {profile.gender}
-                        </Typography>
-                      )}
-                    </div>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <div>
-                      <Typography variant="body1" sx={{ marginBottom: 1 }}>
-                        <strong>Date of Birth</strong>
-                      </Typography>
-                      {isEditing ? (
-                        <TextField
-                          name="dob"
-                          value={formatDate(profile.dateOfBirth)}
-                          onChange={handleInputChange}
-                          fullWidth
-                          disabled
-                        />
-                      ) : (
-                        <Typography variant="body2">
-                          {formatDate(profile.dateOfBirth)}
-                        </Typography>
-                      )}
-                    </div>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <div>
-                      <Typography variant="body1" sx={{ marginBottom: 1 }}>
-                        <strong>Class Name</strong>
-                      </Typography>
-                      {isEditing ? (
-                        <TextField
-                          name="className"
-                          value={className || ""}
-                          onChange={handleInputChange}
-                          fullWidth
-                          disabled
-                        />
-                      ) : (
-                        <Typography variant="body2">
-                          {className}
-                        </Typography>
-                      )}
-                    </div>
-                  </Grid>
+        <Grid item xs={12} md={8}>
+          <Box
+            sx={{
+              padding: 3,
+              borderRadius: 2,
+              marginTop: 2,
+              border: '1px solid #e0e0e0'
+            }}
+          >
+            <Box>
+              <Grid container spacing={3}>
+                <Grid item xs={12} sm={6}>
+                  <div>
+                    <Typography variant="body1" sx={{ marginBottom: 1 }}>
+                      <strong>Email</strong>
+                    </Typography>
+                    {isEditing ? (
+                      <TextField
+                        name="email"
+                        value={formData.email || ""}
+                        onChange={handleInputChange}
+                        fullWidth
+                        disabled={!isEditing}
+                        error={!!errors.email}
+                        helperText={errors.email}
+                        variant="outlined"
+                      />
+                    ) : (
+                      <Typography variant="body2">{profile.email}</Typography>
+                    )}
+                  </div>
                 </Grid>
 
-                {/* Save or Edit buttons */}
-                {isEditing ? (
-                  <Box
-                    mt={2}
-                    sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}
+                <Grid item xs={12} sm={6}>
+                  <div>
+                    <Typography variant="body1" sx={{ marginBottom: 1 }}>
+                      <strong>Phone</strong>
+                    </Typography>
+                    {isEditing ? (
+                      <TextField
+                        name="phone"
+                        value={formData.phone || ""}
+                        onChange={handleInputChange}
+                        fullWidth
+                        disabled={!isEditing}
+                        error={!!errors.phone}
+                        helperText={errors.phone}
+                        variant="outlined"
+                      />
+                    ) : (
+                      <Typography variant="body2">{profile.phone}</Typography>
+                    )}
+                  </div>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <div>
+                    <Typography variant="body1" sx={{ marginBottom: 1 }}>
+                      <strong>Address</strong>
+                    </Typography>
+                    {isEditing ? (
+                      <TextField
+                        name="address"
+                        value={formData.address || ""}
+                        onChange={handleInputChange}
+                        fullWidth
+                        disabled={!isEditing}
+                        error={!!errors.address}
+                        helperText={errors.address}
+                        variant="outlined"
+                      />
+                    ) : (
+                      <Typography variant="body2">
+                        {profile.address}
+                      </Typography>
+                    )}
+                  </div>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <div>
+                    <Typography variant="body1" sx={{ marginBottom: 1 }}>
+                      <strong>Gender</strong>
+                    </Typography>
+                    {isEditing ? (
+                      <TextField
+                        name="gender"
+                        value={profile.gender}
+                        onChange={handleInputChange}
+                        fullWidth
+                        disabled
+                      />
+                    ) : (
+                      <Typography variant="body2">
+                        {profile.gender}
+                      </Typography>
+                    )}
+                  </div>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <div>
+                    <Typography variant="body1" sx={{ marginBottom: 1 }}>
+                      <strong>Date of Birth</strong>
+                    </Typography>
+                    {isEditing ? (
+                      <TextField
+                        name="dob"
+                        value={formatDate(profile.dateOfBirth)}
+                        onChange={handleInputChange}
+                        fullWidth
+                        disabled
+                      />
+                    ) : (
+                      <Typography variant="body2">
+                        {formatDate(profile.dateOfBirth)}
+                      </Typography>
+                    )}
+                  </div>
+                </Grid>
+              </Grid>
+
+              {/* Save or Edit buttons */}
+              {isEditing ? (
+                <Box
+                  mt={2}
+                  sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}
+                >
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleSave}
                   >
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={handleSave}
-                    >
-                      Save Changes
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="secondary"
-                      onClick={handleCancelEdit}
-                    >
-                      Cancel
-                    </Button>
-                  </Box>
-                ) : (
-                  <Box
-                    mt={2}
-                    sx={{ display: "flex", justifyContent: "flex-end" }}
+                    Save Changes
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    onClick={handleCancelEdit}
                   >
-                    <Button
-                      variant="contained"
-                      color="secondary"
-                      onClick={() => setIsEditing(true)}
-                    >
-                      Edit Profile
-                    </Button>
-                  </Box>
-                )}
-              </Box>
-            </Paper>
-          </Grid>
+                    Cancel
+                  </Button>
+                </Box>
+              ) : (
+                <Box
+                  mt={2}
+                  sx={{ display: "flex", justifyContent: "flex-end" }}
+                >
+                  <Button
+                    variant="contained"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    Edit Profile
+                  </Button>
+                </Box>
+              )}
+            </Box>
+          </Box>
         </Grid>
-      </Card>
+      </Grid>
     </Box>
   );
 }
