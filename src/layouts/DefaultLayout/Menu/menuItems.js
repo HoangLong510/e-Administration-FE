@@ -33,17 +33,6 @@ const menuItems = [
         ]
     },
     {
-        label: "Labs",
-        href: `/management/lab`,
-        icon: DesktopWindowsRoundedIcon,
-        role: [
-            "Admin",
-            "Instructor",
-            "Student",
-        ]
-    },
-
-    {
         label: "Reports",
         href: `/report`,
         icon: ReportGmailerrorredRoundedIcon,

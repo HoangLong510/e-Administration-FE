@@ -419,6 +419,7 @@ export default function ReportDetails() {
                       }}
                     >
                       <Typography variant="h6">{task.title}</Typography>
+                      <Typography variant="h6">{task.assigneeFullName}</Typography>
                       <Typography
                         variant="body2"
                         color="textSecondary"
