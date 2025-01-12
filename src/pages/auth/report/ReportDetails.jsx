@@ -14,7 +14,7 @@ import {
   TextField,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setPopup } from "~/libs/features/popup/popupSlice";
 import {
@@ -26,10 +26,25 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import TaskIcon from "@mui/icons-material/Task";
 
+const TaskBox = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(2),
+  border: "1px solid #eee",
+  borderRadius: theme.shape.borderRadius,
+  boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+  display: "flex",
+  alignItems: "center",
+  marginRight: theme.spacing(2),
+  marginBottom: theme.spacing(2),
+  "&:last-child": {
+    marginRight: 0,
+  },
+}));
+
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
   margin: theme.spacing(3),
-  backgroundColor: theme.palette.background.default,
+  backgroundColor: theme.palette.background.paper,
+  borderRadius: theme.shape.borderRadius * 2,
 }));
 
 const StyledButton = styled(Button)(({ theme }) => ({
@@ -160,6 +175,8 @@ export default function ReportDetails() {
         return "Machinery";
       case 2:
         return "Other";
+      case 3:
+        return "ExtraTime";
       default:
         return "Unknown";
     }
@@ -400,53 +417,53 @@ export default function ReportDetails() {
           <Divider />
         </Grid>
         <Grid item xs={12} mb={5}>
-          {/* Hiển thị danh sách tasks */}
+          <Typography variant="h6" gutterBottom>
+            Tasks
+          </Typography>
           {tasks?.length > 0 ? (
-            <Box>
-              <Typography variant="h6" gutterBottom>
-                Tasks
-              </Typography>
-              <Grid container spacing={2}>
-                {tasks.map((task, index) => (
-                  <Grid item key={task.id} xs={12} sm={6} md={4}>
-                    <Box
-                      sx={{
-                        padding: 2,
-                        border: "1px solid #ddd",
-                        borderRadius: 2,
-                        boxShadow: "0 0 8px rgba(0,0,0,0.1)",
-                        height: "100%",
-                      }}
-                    >
-                      <Typography variant="h6">{task.title}</Typography>
-                      <Typography variant="h6">{task.assigneeFullName}</Typography>
-                      <Typography
-                        variant="body2"
-                        color="textSecondary"
-                        paragraph
-                      >
-                        {task.content}
-                      </Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap" }}>
+              {tasks.map((task) => (
+                <TaskBox sx={{cursor:"pointer"}} onClick={() => navigate(`/task-detail/${task.id}`)} key={task.id}>
+                  <Grid container alignItems="center">
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle1">{task.title}</Typography>
+                    </Grid>
+                    <Grid item xs={12}>
                       <Typography variant="body2" color="textSecondary">
-                        Status: {getStatusText(task.status)}
+                        Assigned to: {task.assigneeFullName}
                       </Typography>
-                    </Box>
+                    </Grid>
+                    <Typography variant="body2" paragraph sx={{ marginTop: 1 }}>
+                      {task.content}
+                    </Typography>
+                    <Grid item xs={12} textAlign="right">
+                      <Chip
+                        label={getStatusText(task.status)}
+                        color={
+                          task.status === 0
+                            ? "warning"
+                            : task.status === 1
+                            ? "info"
+                            : "success"
+                        }
+                        size="small"
+                      />
+                    </Grid>
                   </Grid>
-                ))}
-              </Grid>
-
-              {tasks.every((task) => task.status === 2) &&
-                report?.status !== 2 && (
-                  <Box sx={{ marginTop: 2 }}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={handleCompleteReport}
-                    >
-                      Complete Report
-                    </Button>
-                  </Box>
-                )}
+                  {tasks.every((task) => task.status === 2) &&
+                    report?.status !== 2 && (
+                      <Box sx={{ marginTop: 2 }}>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={handleCompleteReport}
+                        >
+                          Complete Report
+                        </Button>
+                      </Box>
+                    )}
+                </TaskBox>
+              ))}
             </Box>
           ) : (
             <Typography variant="body2" color="textSecondary">
@@ -459,7 +476,6 @@ export default function ReportDetails() {
         <Divider />
       </Grid>
 
-      {/* Comments Section */}
       <Grid item xs={12}>
         <Typography variant="h6" gutterBottom>
           Comments

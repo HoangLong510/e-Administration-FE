@@ -165,6 +165,7 @@ export default function ListReport() {
             <MenuItem value="">All</MenuItem>
             <MenuItem value="Education">Education</MenuItem>
             <MenuItem value="Machinery">Machinery</MenuItem>
+            <MenuItem value="ExtraTime">ExtraTime</MenuItem>
             <MenuItem value="Other">Other</MenuItem>
           </Select>
           <Tooltip title="Filter by Status">
