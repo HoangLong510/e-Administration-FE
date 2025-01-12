@@ -22,8 +22,9 @@ import {
 } from "./service";
 import { useDispatch } from "react-redux";
 import { setPopup } from "~/libs/features/popup/popupSlice";
+import { useNavigate } from "react-router-dom";
 
-export default function Register() {
+export default function Register({setTabValue}) {
   const [course, setCourse] = useState("");
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("");
@@ -38,6 +39,7 @@ export default function Register() {
   const [className, setClassName] = useState("");
 
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const handleGetAllLab = async () => {
     try {
@@ -236,6 +238,7 @@ export default function Register() {
         };
         dispatch(setPopup(dataPopup));
         handleGetAllSchedule();
+        setTabValue(0)
       } else {
         const dataPopup = {
           type: "error",

@@ -79,11 +79,11 @@ export default function AddDocument() {
 
     dispatch(setLoading());
     try {
-      const response = await createDocumentApi(data); // Gọi API thực tế
+      const response = await createDocumentApi(data); 
       dispatch(clearLoading());
       if (response.success) {
         dispatch(setPopup({ type: 'success', message: 'Document added successfully!' }));
-        navigate('/management/document');
+        navigate('/document');
       } else {
         console.error('Error response:', response);
         dispatch(setPopup({ type: 'error', message: response.message }));
@@ -119,7 +119,7 @@ export default function AddDocument() {
           color="primary"
           sx={{ borderRadius: 2, textTransform: 'none' }}
           component={Link}
-          to="/management/document"
+          to="/document"
         >
           Back to list
         </Button>

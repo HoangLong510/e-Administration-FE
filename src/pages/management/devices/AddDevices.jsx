@@ -139,7 +139,7 @@ export default function AddDevices() {
           setErrors({});
           setTouched({});
           if (fileInputRef.current) {
-            fileInputRef.current.value = ''; // Reset file input
+            fileInputRef.current.value = ''; 
           }
         }
       } else {

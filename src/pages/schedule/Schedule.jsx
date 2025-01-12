@@ -177,7 +177,6 @@ const Schedule = () => {
       const res = await GetAllScheduleAPI();
       const formattedData = await formatScheduleData(res || [], year, week);
       setScheduleData(formattedData);
-      console.log(formattedData);
     } catch (err) {
       console.error("Error fetching all schedules:", err);
     }
@@ -495,7 +494,7 @@ const Schedule = () => {
       {/* Tab  Register */}
       {tabValue === 1 && user.data.role === "Instructor" && (
         <Box sx={{ mt: 3 }}>
-          <Register />
+          <Register setTabValue={setTabValue} />
         </Box>
       )}
     </Box>
