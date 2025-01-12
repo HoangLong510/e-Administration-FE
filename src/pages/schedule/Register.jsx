@@ -74,6 +74,11 @@ export default function Register() {
     setClassName(event.target.value);
   };
 
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  const minDate = tomorrow.toISOString().split("T")[0];
+
   // Handle form changes
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -126,19 +131,19 @@ export default function Register() {
     const [startHours, startMinutes] = startTime.split(":").map(Number);
     const startDate = new Date();
     startDate.setHours(startHours, startMinutes, 0, 0);
-  
+
     const isBeforeNoon = startDate.getHours() < 12;
-  
+
     const endDate = new Date(startDate);
-    endDate.setMinutes(startDate.getMinutes() + 60); 
-  
+    endDate.setMinutes(startDate.getMinutes() + 60);
+
     const maxAllowedDuration =
       (new Date().setHours(22, 0, 0, 0) - startDate) / 60000;
-  
+
     const endValid = endDate <= new Date().setHours(22, 0, 0, 0);
-  
+
     let error = "";
-  
+
     if (isBeforeNoon) {
       if (startDate < new Date().setHours(6, 0, 0, 0)) {
         error = "Start time must be after 06:00 AM.";
@@ -152,13 +157,13 @@ export default function Register() {
         error = "Start time must be before 09:00 PM.";
       }
     }
-  
+
     if (!error && 60 > maxAllowedDuration) {
       error = `Duration cannot exceed ${maxAllowedDuration} minutes to ensure the end time is before 10:00 PM.`;
     } else if (!error && !endValid) {
       error = "End time must be before 10:00 PM.";
     }
-  
+
     return error;
   };
 
@@ -201,7 +206,7 @@ export default function Register() {
       Date.UTC(year, month - 1, day, hours, minutes)
     );
     const newEndTime = new Date(newStartTime);
-    newEndTime.setMinutes(newStartTime.getMinutes() + 45); 
+    newEndTime.setMinutes(newStartTime.getMinutes() + 45);
 
     const endHour = newEndTime.getHours();
     const endMinute = newEndTime.getMinutes();
@@ -320,6 +325,7 @@ export default function Register() {
                 error={!!errors.Date}
                 helperText={errors.Date}
                 InputLabelProps={{ shrink: true }}
+                inputProps={{ min: minDate }} 
               />
             </Grid>
             <Grid item xs={12} sm={4}>
