@@ -35,7 +35,7 @@ export default function Report() {
         dispatch(
           setPopup({
             type: "error",
-            message: "Không tìm thấy thông tin người dùng!",
+            message: "User information not found!",
           })
         );
       }
@@ -50,7 +50,7 @@ export default function Report() {
       dispatch(
         setPopup({
           type: "error",
-          message: "Bạn cần đăng nhập lại để tạo báo cáo!",
+          message: "You need to log in again to generate reports!",
         })
       );
       return;
@@ -60,7 +60,7 @@ export default function Report() {
       dispatch(
         setPopup({
           type: "error",
-          message: "Tiêu đề và nội dung không được để trống!",
+          message: "Title and content cannot be blank!",
         })
       );
       return;

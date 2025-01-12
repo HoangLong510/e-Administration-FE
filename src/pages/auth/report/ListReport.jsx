@@ -227,7 +227,11 @@ export default function ListReport() {
                       <Chip
                         label={report.status}
                         color={
-                          report.status === "Pending" ? "warning" : "success"
+                          report.status === "Pending"
+                            ? "warning"
+                            : report.status === "InProgress"
+                            ? "info"
+                            : "success"
                         }
                         size="small"
                       />

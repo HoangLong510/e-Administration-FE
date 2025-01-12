@@ -48,6 +48,7 @@ export default function ReportDetails() {
   const [loading, setLoading] = useState(false);
   const [commentContent, setCommentContent] = useState("");
   const [comments, setComments] = useState([]);
+  const [tasks, setTasks] = useState([]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -69,18 +70,18 @@ export default function ReportDetails() {
     };
 
     const fetchReport = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-        const response = await getReport(id); // Gọi API với `id`
-        console.log(response); // Kiểm tra response từ API
+        const response = await getReport(id);
         if (response?.success) {
           setReport(response.data);
-          setComments(response.data.comments || []); // Cập nhật comments nếu có
+          setComments(response.data.comments || []);
+          setTasks(response.data.tasks || []);
         } else {
-          setError("Không tìm thấy báo cáo.");
+          setError("Report not found.");
         }
       } catch (err) {
-        setError("Đã xảy ra lỗi khi tải dữ liệu báo cáo.");
+        setError("An error occurred while loading report data.");
       } finally {
         setLoading(false);
       }
@@ -92,6 +93,52 @@ export default function ReportDetails() {
     fetchUser();
   }, [id]);
 
+  const handleCompleteReport = async () => {
+    const allTasksCompleted = report.tasks.every((task) => task.status === 2);
+
+    if (!allTasksCompleted) {
+      dispatch(
+        setPopup({
+          type: "error",
+          message: "All tasks must be completed before completing the report.",
+        })
+      );
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await updateReportStatus(report.id, 2);
+      if (response?.success) {
+        setReport({ ...report, status: 2 });
+
+        dispatch(
+          setPopup({
+            type: "success",
+            message: "Report successfully completed.",
+          })
+        );
+        handleBack();
+      } else {
+        dispatch(
+          setPopup({
+            type: "error",
+            message: response?.message || "Error completing report",
+          })
+        );
+      }
+    } catch (err) {
+      dispatch(
+        setPopup({
+          type: "error",
+          message: "An error occurred while completing the report.",
+        })
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusText = (status) => {
     switch (status) {
       case 0:
@@ -100,6 +147,19 @@ export default function ReportDetails() {
         return "InProgress";
       case 2:
         return "Completed";
+      default:
+        return "Unknown";
+    }
+  };
+
+  const getTitleText = (title) => {
+    switch (title) {
+      case 0:
+        return "Education";
+      case 1:
+        return "Machinery";
+      case 2:
+        return "Other";
       default:
         return "Unknown";
     }
@@ -202,19 +262,12 @@ export default function ReportDetails() {
   };
 
   if (!report) {
-    return (
-      <StyledPaper elevation={3}>
-        <Typography variant="h6" color="error" align="center">
-          Report not found.
-        </Typography>
-      </StyledPaper>
-    );
+    return null;
   }
 
   return (
     <StyledPaper elevation={8}>
       <Grid container spacing={3}>
-        {/* Tiêu đề và trạng thái */}
         <Grid item xs={12}>
           <Box
             display="flex"
@@ -230,16 +283,56 @@ export default function ReportDetails() {
                 report.status === 0
                   ? "warning"
                   : report.status === 1
-                  ? "primary"
+                  ? "info"
                   : "success"
               }
             />
           </Box>
         </Grid>
-
-        {/* Nội dung báo cáo */}
         <Grid item xs={12}>
-          <Typography variant="h6">{report.title}</Typography>
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <StyledButton
+              variant="outlined"
+              onClick={handleBack}
+              color="primary"
+              startIcon={<ArrowBackIcon />}
+            >
+              Back to Reports
+            </StyledButton>
+
+            {role === "Admin" && report.status === 0 && !isInProgress && (
+              <StyledButton
+                variant="contained"
+                onClick={handleStatusChange}
+                color="primary"
+                disabled={loading}
+              >
+                {loading ? (
+                  <CircularProgress size={24} />
+                ) : (
+                  "Move to In Progress"
+                )}
+              </StyledButton>
+            )}
+            {role === "Admin" && isInProgress && (
+              <StyledButton
+                variant="contained"
+                onClick={handleCreateTask}
+                color="secondary"
+                startIcon={<TaskIcon />}
+              >
+                Create Task
+              </StyledButton>
+            )}
+          </Box>
+        </Grid>
+
+        <Grid item xs={12}>
+          <Typography variant="h6">{getTitleText(report.title)}</Typography>
           <Typography variant="subtitle2" color="textSecondary">
             Sent by {report.senderFullName}
           </Typography>
@@ -306,50 +399,62 @@ export default function ReportDetails() {
         <Grid item xs={12}>
           <Divider />
         </Grid>
+        <Grid item xs={12} mb={5}>
+          {/* Hiển thị danh sách tasks */}
+          {tasks?.length > 0 ? (
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Tasks
+              </Typography>
+              <Grid container spacing={2}>
+                {tasks.map((task, index) => (
+                  <Grid item key={task.id} xs={12} sm={6} md={4}>
+                    <Box
+                      sx={{
+                        padding: 2,
+                        border: "1px solid #ddd",
+                        borderRadius: 2,
+                        boxShadow: "0 0 8px rgba(0,0,0,0.1)",
+                        height: "100%",
+                      }}
+                    >
+                      <Typography variant="h6">{task.title}</Typography>
+                      <Typography
+                        variant="body2"
+                        color="textSecondary"
+                        paragraph
+                      >
+                        {task.content}
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        Status: {getStatusText(task.status)}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                ))}
+              </Grid>
 
-        <Grid item xs={12}>
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <StyledButton
-              variant="outlined"
-              onClick={handleBack}
-              color="primary"
-              startIcon={<ArrowBackIcon />}
-            >
-              Back to Reports List
-            </StyledButton>
-
-            {role === "Admin" && report.status === 0 && (
-              <StyledButton
-                variant="contained"
-                onClick={handleStatusChange}
-                color="primary"
-                disabled={loading}
-              >
-                {loading ? (
-                  <CircularProgress size={24} />
-                ) : (
-                  "Move to In Progress"
+              {tasks.every((task) => task.status === 2) &&
+                report?.status !== 2 && (
+                  <Box sx={{ marginTop: 2 }}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleCompleteReport}
+                    >
+                      Complete Report
+                    </Button>
+                  </Box>
                 )}
-              </StyledButton>
-            )}
-            {role === "Admin" && isInProgress && (
-              <StyledButton
-                variant="contained"
-                onClick={handleCreateTask}
-                color="secondary"
-                startIcon={<TaskIcon />}
-              >
-                Create Task
-              </StyledButton>
-            )}
-          </Box>
+            </Box>
+          ) : (
+            <Typography variant="body2" color="textSecondary">
+              No tasks available.
+            </Typography>
+          )}
         </Grid>
       </Grid>
-      <Grid item xs={12}>
+      <Grid item xs={12} mb={4}>
         <Divider />
       </Grid>
 

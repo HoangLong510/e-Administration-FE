@@ -27,6 +27,7 @@ import {
   Delete as DeleteIcon,
   Info as InfoIcon,
 } from "@mui/icons-material";
+import regex from "~/utils/regex";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setPopup } from "~/libs/features/popup/popupSlice";
@@ -36,12 +37,13 @@ import {
   deleteClass,
   getClassById,
   updateClass,
-  getUsersByClassId
+  getUsersByClassId,
 } from "./service";
 
 // Component thêm lớp học
 function AddClassForm({ onAddClass, fetchClasses, isClassNameExists }) {
   const [name, setName] = useState("");
+  const [nameError, setNameError] = useState("");
   const dispatch = useDispatch();
 
   const handleSubmit = async (e) => {
@@ -84,6 +86,16 @@ function AddClassForm({ onAddClass, fetchClasses, isClassNameExists }) {
       dispatch(setPopup(dataPopup));
     }
   };
+  const handleNameChange = (e) => {
+    const newName = e.target.value;
+    setName(newName);
+
+    if (!regex.className.pattern.test(newName.trim())) {
+      setNameError(regex.className.message);
+    } else {
+      setNameError("");
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit}>
@@ -92,9 +104,10 @@ function AddClassForm({ onAddClass, fetchClasses, isClassNameExists }) {
           <TextField
             label="Class Name"
             value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
+            onChange={handleNameChange}
             fullWidth
+            error={!!nameError}
+            helperText={nameError}
           />
         </Grid>
         <Grid item xs={12} sm={2}>
@@ -104,6 +117,7 @@ function AddClassForm({ onAddClass, fetchClasses, isClassNameExists }) {
             color="primary"
             startIcon={<AddIcon />}
             fullWidth
+            disabled={!!nameError}
           >
             Add
           </Button>
@@ -115,6 +129,7 @@ function AddClassForm({ onAddClass, fetchClasses, isClassNameExists }) {
 
 // Component hiển thị danh sách lớp học
 function ClassManagement() {
+  const [classNameError, setClassNameError] = useState("");
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
@@ -149,8 +164,10 @@ function ClassManagement() {
     fetchClasses();
   }, [page, debouncedSearch, pageSize]);
 
-  const isClassNameExists = (name) => {
-    return classes.some((cls) => cls.name.toLowerCase() === name.toLowerCase());
+  const isClassNameExists = (name, id) => {
+    return classes.some(
+      (cls) => cls.name.toLowerCase() === name.toLowerCase() && cls.id !== id
+    );
   };
 
   const handleAddClass = async () => {
@@ -208,20 +225,22 @@ function ClassManagement() {
 
   const handleOpenDialog = async (id) => {
     const result = await getClassById(id);
-  
+
     if (result.success) {
       setSelectedClass(result.data);
-  
+
       const usersResult = await getUsersByClassId(id);
-  
+
       if (usersResult.success) {
-        const userCount = Array.isArray(usersResult.data) ? usersResult.data.length : 0;
+        const userCount = Array.isArray(usersResult.data)
+          ? usersResult.data.length
+          : 0;
         setUserCount(userCount);
       } else {
         console.log("Error getting users:", usersResult.message);
         setUserCount(0);
       }
-  
+
       setOpenDialog(true);
     } else {
       dispatch(
@@ -234,24 +253,29 @@ function ClassManagement() {
     }
   };
 
-
   const handleSaveChanges = async () => {
+    const originalClassName = classes.find(
+      (cls) => cls.id === selectedClass.id
+    )?.name;
+    if (selectedClass.name === originalClassName) {
+      dispatch(setPopup({ type: "warning", message: "No changes were made!" }));
+      setOpenDialog(false);
+      return;
+    }
+
     if (!selectedClass.name.trim()) {
       dispatch(
-        setPopup({
-          type: "error",
-          message: "Class name cannot be empty!",
-        })
+        setPopup({ type: "error", message: "Class name cannot be empty!" })
       );
       setOpenDialog(false);
       return;
     }
 
-    if (isClassNameExists(selectedClass.name)) {
+    if (isClassNameExists(selectedClass.name, selectedClass.id)) {
       dispatch(
         setPopup({
           type: "error",
-          message: "This class name already exists!",
+          message: `This class name "${selectedClass.name}" already exists!`,
         })
       );
       setOpenDialog(false);
@@ -274,25 +298,29 @@ function ClassManagement() {
       setOpenDialog(false);
       setSelectedClass(null);
     } else {
-      dispatch(
-        setPopup({
-          type: "error",
-          message: result.message,
-        })
-      );
+      dispatch(setPopup({ type: "error", message: result.message }));
     }
+
   };
 
   const handleChangeClassName = (e) => {
+    const newName = e.target.value;
     setSelectedClass({
       ...selectedClass,
-      name: e.target.value,
+      name: newName,
     });
+
+    if (!regex.className.pattern.test(newName.trim())) {
+      setClassNameError(regex.className.message);
+    } else {
+      setClassNameError("");
+    }
   };
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setSelectedClass(null);
+    setClassNameError("");
   };
 
   const handleClassClick = (id) => {
@@ -412,6 +440,8 @@ function ClassManagement() {
               variant="outlined"
               size="medium"
               margin="normal"
+              error={!!classNameError}
+              helperText={classNameError}
             />
             <Typography variant="body1">Total Users: {userCount}</Typography>
           </DialogContent>
@@ -421,6 +451,7 @@ function ClassManagement() {
               color="primary"
               variant="contained"
               style={{ marginRight: "10px" }}
+              disabled={!!classNameError}
             >
               Save
             </Button>
