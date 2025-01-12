@@ -2,6 +2,7 @@ import {
     Avatar,
     Box,
     Button,
+    Chip,
     CircularProgress,
     FormControl,
     Grid,
@@ -29,12 +30,25 @@ import {
 } from 'react-redux'
 import SearchIcon from '@mui/icons-material/Search'
 import AddIcon from '@mui/icons-material/Add'
-import EditIcon from '@mui/icons-material/Edit'
-import DeleteIcon from '@mui/icons-material/Delete'
+import InfoIcon from '@mui/icons-material/Info'
 import { Link } from 'react-router-dom'
 import { clearLoading, setLoading } from '~/libs/features/loading/loadingSlice'
 import { getTasksApi } from './service'
 import { setPopup } from '~/libs/features/popup/popupSlice'
+
+const statusColors = {
+    'Canceled': 'error',
+    'Pending': 'warning',
+    'InProgress': 'info',
+    'Completed': 'primary'
+}
+
+const statusLabel = {
+    'Canceled': 'Canceled',
+    'Pending': 'Pending',
+    'InProgress': 'In Progress',
+    'Completed': 'Completed'
+}
 
 export default function Task() {
     const dispatch = useDispatch()
@@ -141,6 +155,7 @@ export default function Task() {
                                 <MenuItem value={'Pending'}>Pending</MenuItem>
                                 <MenuItem value={'InProgress'}>In Progress</MenuItem>
                                 <MenuItem value={'Completed'}>Completed</MenuItem>
+                                <MenuItem value={'Canceled'}>Canceled</MenuItem>
                             </Select>
                         </FormControl>
                     </Grid>
@@ -191,6 +206,7 @@ export default function Task() {
                     <Table>
                         <TableHead>
                             <TableRow>
+                                <TableCell>Code</TableCell>
                                 <TableCell>Title</TableCell>
                                 <TableCell>Assignee</TableCell>
                                 <TableCell>Created At</TableCell>
@@ -204,6 +220,14 @@ export default function Task() {
                                     <TableRow key={index} hover component={Link} to={`/task-detail/${task.id}`}
                                         sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                                     >
+                                        <TableCell>
+                                            <Typography sx={{
+                                                fontSize: '14px',
+                                                fontWeight: 500
+                                            }}>
+                                                Task {task.id}
+                                            </Typography>
+                                        </TableCell>
                                         <TableCell>
                                             {task.title}
                                         </TableCell>
@@ -226,12 +250,18 @@ export default function Task() {
                                         <TableCell>
                                             {new Date(task.createdAt).toLocaleString()}
                                         </TableCell>
-                                        <TableCell>{task.status}</TableCell>
+                                        <TableCell>
+                                            <Chip
+                                                label={statusLabel[task.status]}
+                                                color={statusColors[task.status]}
+                                                size='small'
+                                            />
+                                        </TableCell>
                                         <TableCell align='right'>
                                             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                                                 <Tooltip title="Task detail">
                                                     <IconButton component={Link} to={`/task-detail/${task.id}`}>
-                                                        <EditIcon />
+                                                        <InfoIcon />
                                                     </IconButton>
                                                 </Tooltip>
                                             </Box>
