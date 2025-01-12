@@ -22,6 +22,10 @@ const regex = {
     address: {
         pattern: /^(?!\s|[,.-])[a-zA-Z0-9\u0080-\uFFFF\s,.-]{6,100}(?<!\s|[,.-])$/,
         message: "Address must be between 6 and 100 characters and can only include letters, numbers, commas, periods, and hyphens"
+    },
+    className: {
+        pattern: /^.{5,}$/,
+        message: "Class name must be at least 5 characters long"
     }
 }
 

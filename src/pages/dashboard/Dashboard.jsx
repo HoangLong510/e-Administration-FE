@@ -8,11 +8,13 @@ import {
   fetchTotalPendingReports,
   fetchLabsStatusSummary,
   fetchReportsForCurrentYear,
-  fetchExpiredSoftwareApi
+  fetchExpiredSoftwareApi,
 } from "./service";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const [totalUsers, setTotalUsers] = useState(0);
   const [totalPendingReports, setTotalPendingReports] = useState(0);
   const [expiredSoftwareCount, setExpiredSoftwareCount] = useState(0);
@@ -67,7 +69,7 @@ const Dashboard = () => {
       } else {
         console.error(result.message);
       }
-    }
+    };
 
     getTotalUsers();
     getTotalPendingReports();
@@ -145,8 +147,9 @@ const Dashboard = () => {
     },
   };
 
-  const StatCard = ({ title, value, icon, color }) => (
+  const StatCard = ({ title, value, icon, color, onClick }) => (
     <Paper
+      onClick={onClick}
       sx={{
         p: 3,
         height: "100%",
@@ -194,6 +197,7 @@ const Dashboard = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
+            onClick={() => navigate("/management/lab")}
             title="Active Labs"
             value={activeLabs}
             icon={<Business />}
@@ -202,6 +206,7 @@ const Dashboard = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
+            onClick={() => navigate("/management/user")}
             title="Total Users"
             value={totalUsers}
             icon={<Group />}
@@ -210,6 +215,7 @@ const Dashboard = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
+            onClick={() => navigate("/management/software")}
             title="Software Expiring Soon"
             value={expiredSoftwareCount}
             icon={<Devices />}
@@ -218,6 +224,7 @@ const Dashboard = () => {
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
+            onClick={() => navigate("/report")}
             title="Reports Pending"
             value={totalPendingReports}
             icon={<Report />}

@@ -61,16 +61,25 @@ export default function NavbarNotification() {
       return;
     }
 
-    const result = await markNotificationAsRead(notificationId);
-    if (result.success) {
-      // Cập nhật trạng thái của thông báo đã được xem
-      setNotifications((prevNotifications) =>
-        prevNotifications.map((notification) =>
-          notification.id === notificationId
-            ? { ...notification, viewed: true }
-            : notification
-        )
-      );
+    try {
+      // Gọi API để đánh dấu thông báo là đã xem
+      const result = await markNotificationAsRead(notificationId);
+
+      if (result.success) {
+        setNotifications((prevNotifications) =>
+          prevNotifications.map((notification) =>
+            notification.id === notificationId
+              ? { ...notification, viewed: true }
+              : notification
+          )
+        );
+
+        setUnreadCount((prevUnreadCount) => Math.max(0, prevUnreadCount - 1));
+      } else {
+        console.error("Error marking notification as read");
+      }
+    } catch (error) {
+      console.error("An error occurred:", error);
     }
   };
 
@@ -155,8 +164,8 @@ export default function NavbarNotification() {
                 },
               }}
               onClick={() =>
-                handleNotificationClick(notification.id, notification.reportId)
-              } // Khi click đánh dấu là đã xem
+                handleNotificationClick(notification.reportId, notification.id)
+              }
             >
               <Typography
                 variant="body2"
