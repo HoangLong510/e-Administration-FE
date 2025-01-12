@@ -19,7 +19,8 @@ const menuItems = [
         icon: AssignmentRoundedIcon,
         role: [
             "Admin",
-            "TechnicalStaff"
+            "TechnicalStaff",
+            "Instructor"
         ]
     },
     {

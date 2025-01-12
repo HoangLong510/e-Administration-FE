@@ -7,6 +7,7 @@ import {
   Tooltip,
   Typography,
   Badge,
+  Avatar,
 } from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { getAllNotifications, markNotificationAsRead } from "./service"; // Đảm bảo đường dẫn chính xác
@@ -126,7 +127,7 @@ export default function NavbarNotification() {
               overflow: "visible",
               filter: "drop-shadow(0px 0px 10px rgba(0, 0, 0, 0.1))",
               mt: 2,
-              width: "350px", // Tăng chiều rộng menu cho dễ nhìn
+              width: "400px", // Tăng chiều rộng menu
               "&::before": {
                 content: '""',
                 display: "block",
@@ -145,92 +146,125 @@ export default function NavbarNotification() {
         transformOrigin={{ horizontal: "right", vertical: "top" }}
         anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
       >
-        <MenuItem disabled>
-          <Typography sx={{ fontWeight: "bold" }}>Notifications</Typography>
+        <MenuItem>
+          <Typography sx={{ fontWeight: "bold", color:"primary.main" }}>Notifications</Typography>
         </MenuItem>
-        {notifications.length > 0 ? (
-          notifications.map((notification) => (
-            <MenuItem
-              key={notification.id}
-              sx={{
-                height: "auto",
-                whiteSpace: "normal",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-start",
-                width: "100%",
-                backgroundColor: notification.viewed
-                  ? "transparent"
-                  : "#f5f5f5",
-                padding: "10px",
-                borderRadius: "5px",
-                marginBottom: "5px", // Cách nhau giữa các thông báo
-                transition: "background-color 0.3s",
-                "&:hover": {
-                  backgroundColor: "#e0f7fa", // Màu khi hover
-                },
-              }}
-              onClick={() => {
-                if (notification.reportId) {
-                  handleNotificationClick(notification.reportId, notification.id)
-                }
-                if (notification.taskId) {
-                  handleTaskNotificationClick(notification.taskId, notification.id)
-                }
-              }}
-            >
-              <Typography
-                variant="body2"
+        <Box
+          sx={{
+            maxHeight: "500px", // Chiều cao cố định
+            overflowY: "auto", // Thêm thanh cuộn dọc
+            overflowX: "hidden", // Ẩn cuộn ngang
+          }}
+        >
+          {notifications.length > 0 ? (
+            notifications.map((notification) => (
+              <MenuItem
+                key={notification.id}
                 sx={{
-                  fontWeight: notification.viewed ? "normal" : "bold",
-                  color: notification.viewed ? "text.primary" : "primary.main",
-
+                  height: "auto",
+                  whiteSpace: "normal",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
                   width: "100%",
-                  wordWrap: "break-word",
-                  display: "-webkit-box",
-                  WebkitLineClamp: 3,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
+                  backgroundColor: notification.viewed
+                    ? "transparent"
+                    : "#f5f5f5", // Màu nền mặc định
+                  padding: "10px",
+                  borderRadius: "5px",
+                  marginBottom: "5px",
+                  transition: "background-color 0.3s", // Hiệu ứng mượt khi hover
+                  "&:hover": {
+                    backgroundColor: "#e0f7fa", // Màu nền khi hover
+                    transform: "scale(1.02)", // Tăng kích thước nhẹ khi hover
+                    boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)", // Thêm hiệu ứng đổ bóng
+                  },
+                }}
+                onClick={() => {
+                  if (notification.reportId) {
+                    handleNotificationClick(
+                      notification.reportId,
+                      notification.id
+                    );
+                  }
+                  if (notification.taskId) {
+                    handleTaskNotificationClick(
+                      notification.taskId,
+                      notification.id
+                    );
+                  }
                 }}
               >
-                {notification.senderName} - {notification.content}
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{ fontSize: "12px", color: "text.secondary" }}
-              >
-                {formatDate(notification.createdAt)}
-              </Typography>
-              {notification.ReportDetails && (
                 <Box
                   sx={{
-                    marginTop: "8px",
-                    padding: "8px",
-                    border: "1px solid #f0f0f0",
-                    borderRadius: "4px",
-                    backgroundColor: "#f9f9f9",
+                    display: "flex",
+                    alignItems: "center",
+                    width: "100%",
+                    wordWrap: "break-word",
                   }}
                 >
-                  <Typography variant="body2" sx={{ fontWeight: "bold" }}>
-                    Report Details:
-                  </Typography>
+                  <Avatar
+                    sx={{ width: "30px", height: "30px", marginRight: "8px" }}
+                    src={
+                      notification.imageName
+                        ? `${import.meta.env.VITE_SERVER_URL}/uploads/${
+                            notification.imageName
+                          }`
+                        : "/default-avatar.png"
+                    }
+                  />
                   <Typography
                     variant="body2"
-                    sx={{ color: "text.primary", marginTop: "4px" }}
+                    sx={{
+                      fontWeight: notification.viewed ? "normal" : "bold",
+                      color: notification.viewed
+                        ? "text.primary"
+                        : "primary.main",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
                   >
-                    {notification.ReportDetails?.content}{" "}
-                    {/* Ví dụ: Hiển thị nội dung báo cáo */}
+                    {notification.senderName} - {notification.content}
                   </Typography>
                 </Box>
-              )}
+                <Typography
+                  variant="body2"
+                  sx={{ fontSize: "12px", color: "text.secondary" }}
+                >
+                  {formatDate(notification.createdAt)}
+                </Typography>
+                {notification.ReportDetails && (
+                  <Box
+                    sx={{
+                      marginTop: "8px",
+                      padding: "8px",
+                      border: "1px solid #f0f0f0",
+                      borderRadius: "4px",
+                      backgroundColor: "#f9f9f9",
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+                      Report Details:
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "text.primary", marginTop: "4px" }}
+                    >
+                      {notification.ReportDetails?.content}
+                    </Typography>
+                  </Box>
+                )}
+              </MenuItem>
+            ))
+          ) : (
+            <MenuItem disabled>
+              <Typography>No notifications</Typography>
             </MenuItem>
-          ))
-        ) : (
-          <MenuItem disabled>
-            <Typography>No notifications</Typography>
-          </MenuItem>
-        )}
+          )}
+        </Box>
       </Menu>
     </Box>
   );

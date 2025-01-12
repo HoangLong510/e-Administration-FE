@@ -55,10 +55,9 @@ export const updateDepartment = async (id, departmentData) => {
   }
 };
 
-// Xóa department
-export const deleteDepartment = async (id) => {
+export const getUsersByHodAPI = async () => {
   try {
-    const res = await axios.delete(`${API_URL}/${id}`);
+    const res = await axios.get(`${API_URL}/getusersbyhod`);
     return res.data;
   } catch (error) {
     return handleApiError(error);

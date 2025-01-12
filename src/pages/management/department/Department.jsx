@@ -31,8 +31,6 @@ import {
 import {
   Add as AddIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon,
-  Person as PersonIcon,
   Search as SearchIcon,
 } from "@mui/icons-material";
 
@@ -41,15 +39,18 @@ import {
   getDepartmentById,
   createDepartment,
   updateDepartment,
-  deleteDepartment,
+  getUsersByHodAPI,
 } from "./service";
 import { useDispatch } from "react-redux";
 import { clearLoading, setLoading } from "~/libs/features/loading/loadingSlice";
 
 function DepartmentManager() {
   const [departments, setDepartments] = useState([]);
+  const [users, setUsers] = useState([]);
   const [editingDepartment, setEditingDepartment] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false); 
+  const [actionType, setActionType] = useState(null); 
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [searchQuery, setSearchQuery] = useState("");
@@ -57,13 +58,25 @@ function DepartmentManager() {
   const [newName, setNewName] = useState("");
   const [newHod, setNewHod] = useState("");
   const [newDescription, setNewDescription] = useState("");
-
-  // State cho modal xác nhận
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [confirmAction, setConfirmAction] = useState(null);
-  const [confirmData, setConfirmData] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(""); // To store validation error message
 
   const dispatch = useDispatch();
+
+  const fetchUsersByHod = useCallback(async () => {
+    try {
+      dispatch(setLoading());
+      const res = await getUsersByHodAPI();
+      setUsers(res.data || []);
+    } catch (error) {
+      console.error("Error fetching users by HOD:", error);
+    } finally {
+      dispatch(clearLoading());
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUsersByHod();
+  }, []);
 
   const fetchDepartments = useCallback(async () => {
     try {
@@ -83,8 +96,40 @@ function DepartmentManager() {
 
   const handleAddDepartment = (e) => {
     e.preventDefault();
-    setShowConfirmModal(true);
-    setConfirmAction(() => async () => {
+
+    // Validate department name
+    const existingDepartment = departments.find(
+      (department) => department.name.toLowerCase() === newName.toLowerCase()
+    );
+    if (existingDepartment) {
+      setErrorMessage("Department name already exists.");
+      return;
+    }
+
+    setActionType("add");
+    setOpenConfirmDialog(true); 
+  };
+
+  const handleUpdateDepartment = () => {
+    // Validate department name
+    const existingDepartment = departments.find(
+      (department) =>
+        department.id !== editingDepartment.id &&
+        department.name.toLowerCase() === editingDepartment.name.toLowerCase()
+    );
+    if (existingDepartment) {
+      setErrorMessage("Department name already exists.");
+      return;
+    }
+
+    setActionType("update");
+    setOpenConfirmDialog(true); 
+  };
+
+  const confirmAction = async () => {
+    setErrorMessage(""); // Clear any previous error messages
+
+    if (actionType === "add") {
       try {
         dispatch(setLoading());
         const res = await createDepartment({
@@ -103,13 +148,7 @@ function DepartmentManager() {
       } finally {
         dispatch(clearLoading());
       }
-    });
-    setConfirmData(null);
-  };
-
-  const handleEditDepartment = () => {
-    setShowConfirmModal(true);
-    setConfirmAction(() => async () => {
+    } else if (actionType === "update") {
       try {
         dispatch(setLoading());
         await updateDepartment(editingDepartment.id, editingDepartment);
@@ -121,35 +160,8 @@ function DepartmentManager() {
       } finally {
         dispatch(clearLoading());
       }
-    });
-    setConfirmData(editingDepartment);
-  };
-
-  const handleDeleteDepartment = (id) => {
-    setShowConfirmModal(true);
-    setConfirmAction(() => async () => {
-      try {
-        dispatch(setLoading());
-        await deleteDepartment(id);
-        fetchDepartments();
-      } catch (error) {
-        console.error("Error deleting department:", error);
-      } finally {
-        dispatch(clearLoading());
-      }
-    });
-    setConfirmData({ id });
-  };
-
-  const handleConfirm = async () => {
-    if (confirmAction) {
-      await confirmAction(confirmData);
     }
-    setShowConfirmModal(false);
-  };
-
-  const handleCancelConfirm = () => {
-    setShowConfirmModal(false);
+    setOpenConfirmDialog(false); 
   };
 
   const handleEditClick = (department) => {
@@ -160,6 +172,7 @@ function DepartmentManager() {
   const handleDialogClose = () => {
     setIsDialogOpen(false);
     setEditingDepartment(null);
+    setErrorMessage(""); // Clear error message when closing dialog
   };
 
   const handleChangePage = (event, newPage) => {
@@ -181,7 +194,7 @@ function DepartmentManager() {
         <Typography variant="h4" component="h1" align="center" gutterBottom>
           Management Departments
         </Typography>
-  
+
         {/* Add Department Form */}
         <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
           <form onSubmit={handleAddDepartment}>
@@ -190,31 +203,75 @@ function DepartmentManager() {
                 <TextField
                   label="Department Name"
                   value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
+                  onChange={(e) => {
+                    setNewName(e.target.value);
+                    setErrorMessage(""); // Clear error message on input change
+                  }}
                   required
                   fullWidth
+                  error={!!errorMessage} // Show error state if errorMessage is not empty
+                  helperText={errorMessage} // Display the error message
                 />
               </Grid>
               <Grid item xs={12} sm={5}>
-                <TextField
-                  label="HOD (User ID)"
-                  value={newHod}
-                  onChange={(e) => setNewHod(e.target.value)}
-                  required
-                  fullWidth
-                />
+                <FormControl fullWidth>
+                  <InputLabel id="HOD-label">Head of Department</InputLabel>
+                  <Select
+                    labelId="HOD-label"
+                    name="newHod"
+                    value={newHod}
+                    onChange={(e) => setNewHod(e.target.value)}
+                    label="Head of Department"
+                  >
+                    <MenuItem value={0}>--- select HOD ---</MenuItem>
+                    {users.length > 0 &&
+                      users.map((u) => {
+                        return (
+                          <MenuItem key={u.id} value={u.id}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                              }}
+                            >
+                              <Typography>{u.fullName}</Typography>
+                              <Typography sx={{ color: "#777" }}>
+                                {u.username} ({u.role})
+                              </Typography>
+                            </Box>
+                          </MenuItem>
+                        );
+                      })}
+                  </Select>
+                </FormControl>
               </Grid>
               <Grid item xs={12} sm={2}>
                 <Button
-                  sx={{ height: "100%" }}
+                  sx={{
+                    height: "80%",
+                    padding: "10px 16px",
+                    borderRadius: "8px",
+                    backgroundColor: "primary.main",
+                    color: "#fff",
+                    textTransform: "capitalize",
+                    fontSize: "1rem",
+                    fontWeight: 600,
+                    boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
+                    "&:hover": {
+                      backgroundColor: "primary.dark",
+                      boxShadow: "0px 6px 12px rgba(0, 0, 0, 0.15)",
+                    },
+                    transition: "all 0.3s ease",
+                  }}
                   type="submit"
                   variant="contained"
                   fullWidth
                   startIcon={<AddIcon />}
                 >
-                  Add Department
+                  Add
                 </Button>
               </Grid>
+
               <Grid item xs={12}>
                 <TextField
                   label="Description"
@@ -228,7 +285,7 @@ function DepartmentManager() {
             </Grid>
           </form>
         </Paper>
-  
+
         {/* Search and Filter */}
         <Grid container spacing={2} sx={{ mb: 3 }}>
           <Grid item xs={12} sm={6}>
@@ -260,7 +317,7 @@ function DepartmentManager() {
             </FormControl>
           </Grid>
         </Grid>
-  
+
         {/* Department List Table */}
         <TableContainer component={Paper}>
           <Table sx={{ tableLayout: "fixed" }}>
@@ -270,7 +327,13 @@ function DepartmentManager() {
                 <TableCell align="center" sx={{ width: "140px" }}>
                   HOD
                 </TableCell>
-                <TableCell sx={{ width: "30%", wordWrap: "break-word", maxWidth: "200px" }}>
+                <TableCell
+                  sx={{
+                    width: "30%",
+                    wordWrap: "break-word",
+                    maxWidth: "200px",
+                  }}
+                >
                   Description
                 </TableCell>
                 <TableCell align="right" sx={{ width: "15%" }}>
@@ -284,8 +347,12 @@ function DepartmentManager() {
                 .map((department) => (
                   <TableRow key={department.id}>
                     <TableCell>{department.name}</TableCell>
-                    <TableCell align="center">{department.hod}</TableCell>
-                    <TableCell sx={{ wordWrap: "break-word", maxWidth: "200px" }}>
+                    <TableCell align="center">
+                      {department.user.fullName}
+                    </TableCell>
+                    <TableCell
+                      sx={{ wordWrap: "break-word", maxWidth: "200px" }}
+                    >
                       {department.description}
                     </TableCell>
                     <TableCell align="right">
@@ -296,20 +363,13 @@ function DepartmentManager() {
                       >
                         <EditIcon />
                       </IconButton>
-                      <IconButton
-                        onClick={() => handleDeleteDepartment(department.id)}
-                        color="error"
-                        size="small"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
                     </TableCell>
                   </TableRow>
                 ))}
             </TableBody>
           </Table>
         </TableContainer>
-  
+
         {/* Pagination */}
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
@@ -320,7 +380,7 @@ function DepartmentManager() {
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
-  
+
         {/* Edit Dialog */}
         {editingDepartment && (
           <Dialog open={isDialogOpen} onClose={handleDialogClose}>
@@ -329,27 +389,54 @@ function DepartmentManager() {
               <TextField
                 label="Department Name"
                 value={editingDepartment.name}
-                onChange={(e) =>
+                onChange={(e) => {
                   setEditingDepartment({
                     ...editingDepartment,
                     name: e.target.value,
-                  })
-                }
+                  });
+                  setErrorMessage(""); // Clear error message on input change
+                }}
                 fullWidth
                 margin="normal"
+                error={!!errorMessage} // Show error state if errorMessage is not empty
+                helperText={errorMessage} // Display the error message
               />
-              <TextField
-                label="HOD (User ID)"
-                value={editingDepartment.hod}
-                onChange={(e) =>
-                  setEditingDepartment({
-                    ...editingDepartment,
-                    hod: e.target.value,
-                  })
-                }
-                fullWidth
-                margin="normal"
-              />
+              <FormControl fullWidth>
+                <InputLabel id="assignees-label">Assignees</InputLabel>
+                <Select
+                  labelId="HOD-label"
+                  name="newHod"
+                  value={editingDepartment.hod}
+                  onChange={(e) =>
+                    setEditingDepartment({
+                      ...editingDepartment,
+                      hod: e.target.value,
+                    })
+                  }
+                  label="Select HOD"
+                >
+                  <MenuItem value={0}>--- select HOD ---</MenuItem>
+                  {users.length > 0 &&
+                    users.map((u) => {
+                      return (
+                        <MenuItem key={u.id} value={u.id}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexDirection: "column",
+                            }}
+                          >
+                            <Typography>{u.fullName}</Typography>
+                            <Typography sx={{ color: "#777" }}>
+                              {u.username} ({u.role})
+                            </Typography>
+                          </Box>
+                        </MenuItem>
+                      );
+                    })}
+                </Select>
+              </FormControl>
+
               <TextField
                 label="Description"
                 value={editingDepartment.description}
@@ -367,59 +454,34 @@ function DepartmentManager() {
             </DialogContent>
             <DialogActions>
               <Button onClick={handleDialogClose}>Cancel</Button>
-              <Button onClick={handleEditDepartment} color="primary">
+              <Button onClick={handleUpdateDepartment} color="primary">
                 Update
               </Button>
             </DialogActions>
           </Dialog>
         )}
-  
-        {/* Modal xác nhận */}
-        <Modal
-          aria-labelledby="confirm-modal-title"
-          aria-describedby="confirm-modal-description"
-          open={showConfirmModal}
-          onClose={handleCancelConfirm}
-          closeAfterTransition
-          BackdropComponent={Backdrop}
-          BackdropProps={{
-            timeout: 500,
-          }}
+
+        {/* Confirmation Dialog */}
+        <Dialog
+          open={openConfirmDialog}
+          onClose={() => setOpenConfirmDialog(false)}
         >
-          <Fade in={showConfirmModal}>
-            <Box
-              sx={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                width: 400,
-                bgcolor: "background.paper",
-                boxShadow: 24,
-                p: 4,
-              }}
+          <DialogTitle>
+            Are you sure you want to {actionType === "add" ? "add" : "update"}{" "}
+            this department?
+          </DialogTitle>
+          <DialogActions>
+            <Button
+              onClick={() => setOpenConfirmDialog(false)}
+              color="secondary"
             >
-              <Typography id="confirm-modal-title" variant="h6" component="h2">
-                Confirm
-              </Typography>
-              <Typography id="confirm-modal-description" sx={{ mt: 2 }}>
-                Are you sure you want to perform this action?
-              </Typography>
-              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  onClick={handleCancelConfirm}
-                >
-                  Close
-                </Button>
-                <Button variant="contained" onClick={handleConfirm} autoFocus>
-                  Agree
-                </Button>
-              </Box>
-            </Box>
-          </Fade>
-        </Modal>
+              Cancel
+            </Button>
+            <Button onClick={confirmAction} color="primary">
+              Confirm
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </Container>
   );
