@@ -91,3 +91,17 @@ export const updateSoftwareApi = async (id, data) => {
         };
     }
 };
+export const SendExpirationNotificationsAPI = async () => {
+    try {
+        const res = await axios.post(`/email/send-expiration-notifications`)
+        return res.data;
+    } catch (error) {
+        if (error.response) {
+            return error.response.data;
+        }
+        return {
+            success: false,
+            message: "Server is having problems, please try again later"
+        };
+    }
+};
