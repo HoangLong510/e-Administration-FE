@@ -99,7 +99,7 @@ export default function NavbarUser() {
       >
         <MenuItem
           component={Link}
-          to="/profile"
+          to={user.data.role !== "Admin" ? "/profile" : ""}
           onClick={handleClose}
           sx={{ height: "45px" }}
         >

@@ -80,7 +80,6 @@ export default function EditUser() {
 	const [formData, setFormData] = useState({
 		id: userId,
 		fullName: "",
-		username: "",
 		email: "",
 		phone: "",
 		address: "",
@@ -94,7 +93,6 @@ export default function EditUser() {
 
 	const [touched, setTouched] = useState({
 		fullName: false,
-		username: false,
 		email: false,
 		phone: false,
 		address: false,
@@ -104,7 +102,6 @@ export default function EditUser() {
 
 	const [errors, setErrors] = useState({
 		fullName: "",
-		username: "",
 		email: "",
 		phone: "",
 		address: "",
@@ -120,13 +117,6 @@ export default function EditUser() {
 					error = "Full name is required"
 				} else if (!regex.fullName.pattern.test(value)) {
 					error = regex.fullName.message
-				}
-				break
-			case 'username':
-				if (value.trim() === "") {
-					error = "Username is required"
-				} else if (!regex.username.pattern.test(value)) {
-					error = regex.username.message
 				}
 				break
 			case 'email':
@@ -304,10 +294,7 @@ export default function EditUser() {
 							name="username"
 							label="Username"
 							value={formData.username}
-							onChange={handleInputChange}
-							onBlur={handleBlur}
-							error={errors.username}
-							touched={touched.username}
+							disabled={true}
 						/>
 					</Grid>
 					<Grid item xs={12} sm={6}>
