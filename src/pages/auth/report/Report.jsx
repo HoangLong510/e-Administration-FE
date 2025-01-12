@@ -19,6 +19,7 @@ import { createReport, getUserApi } from "./service";
 
 export default function Report() {
   const [title, setTitle] = useState("");
+  const [role, setRole] = useState(null);
   const [content, setContent] = useState("");
   const [images, setImages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,6 +32,7 @@ export default function Report() {
       const response = await getUserApi();
       if (response.success && response.user) {
         setUserId(response.user.id);
+        setRole(response.user.role);
       } else {
         dispatch(
           setPopup({
@@ -84,7 +86,7 @@ export default function Report() {
         dispatch(
           setPopup({
             type: "success",
-            message: "Báo cáo đã được gửi thành công!",
+            message: "Report sent successfully!",
           })
         );
         setTitle("");
@@ -95,7 +97,7 @@ export default function Report() {
         dispatch(
           setPopup({
             type: "error",
-            message: response.message || "Có lỗi xảy ra khi gửi báo cáo",
+            message: response.message || "An error occurred while sending the report.",
           })
         );
       }
@@ -104,7 +106,7 @@ export default function Report() {
       dispatch(
         setPopup({
           type: "error",
-          message: "Máy chủ gặp sự cố, vui lòng thử lại sau",
+          message: "Server problem, please try again later",
         })
       );
     }
@@ -122,6 +124,18 @@ export default function Report() {
   const handleBack = () => {
     navigate("/report");
   };
+
+  const options = [
+    { value: "Education", label: "Education" },
+    { value: "Machinery", label: "Machinery" },
+    { value: "Other", label: "Other" },
+    { value: "ExtraTime", label: "ExtraTime" },
+  ];
+
+  const filteredOptions =
+    role === "HOD"
+      ? options.filter((option) => option.value === "ExtraTime")
+      : options.filter((option) => option.value !== "ExtraTime");
 
   return (
     <Box sx={{ maxWidth: 800, margin: "auto", padding: 3 }}>
@@ -141,9 +155,11 @@ export default function Report() {
                   onChange={(e) => setTitle(e.target.value)}
                   required
                 >
-                  <MenuItem value="Education">Education</MenuItem>
-                  <MenuItem value="Machinery">Machinery</MenuItem>
-                  <MenuItem value="Other">Other</MenuItem>
+                  {filteredOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Grid>
