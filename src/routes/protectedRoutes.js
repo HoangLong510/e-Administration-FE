@@ -9,6 +9,7 @@ import Task from "~/pages/task/Task"
 import CreateTask from "~/pages/task/CreateTask"
 import TaskDetail from "~/pages/task/TaskDetail"
 import Dashboard from "~/pages/dashboard/Dashboard"
+import EditTask from "~/pages/task/EditTask"
 
 const protectedRoutes = [
     {
@@ -139,6 +140,15 @@ const protectedRoutes = [
             "Instructor",
             "HOD",
             "TechnicalStaff"
+        ]
+    },
+
+    {
+        path: '/edit-task/:taskId',
+        component: EditTask,
+        layout: DefaultLayout,
+        roles: [
+            "Admin"
         ]
     },
 ]
