@@ -52,6 +52,13 @@ export default function NavbarNotification() {
     }
   };
 
+  const handleTaskNotificationClick = async (taskId, notificationId) => {
+    await handleMarkAsRead(notificationId);
+    if (taskId) {
+      Navigate(`/task-detail/${taskId}`);
+    }
+  };
+
   const handleMarkAsRead = async (notificationId) => {
     // Tìm thông báo trong state
     const notification = notifications.find((n) => n.id === notificationId);
@@ -163,9 +170,14 @@ export default function NavbarNotification() {
                   backgroundColor: "#e0f7fa", // Màu khi hover
                 },
               }}
-              onClick={() =>
-                handleNotificationClick(notification.reportId, notification.id)
-              }
+              onClick={() => {
+                if (notification.reportId) {
+                  handleNotificationClick(notification.reportId, notification.id)
+                }
+                if (notification.taskId) {
+                  handleTaskNotificationClick(notification.taskId, notification.id)
+                }
+              }}
             >
               <Typography
                 variant="body2"
