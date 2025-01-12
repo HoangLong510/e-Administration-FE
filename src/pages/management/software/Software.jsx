@@ -27,7 +27,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { fetchSoftwaresApi, SendExpirationNotificationsAPI } from "./service";
+import { fetchSoftwaresApi } from "./service";
 import { useDispatch } from "react-redux";
 import { setPopup } from "~/libs/features/popup/popupSlice";
 import { clearLoading, setLoading } from "~/libs/features/loading/loadingSlice";
@@ -97,26 +97,7 @@ export default function Software() {
       dispatch(setPopup(dataPopup));
     }
   };
-  const handleSendExpirationNotifications = async () => {
-    const response = await SendExpirationNotificationsAPI();
-    if (response.success) {
-      const dataPopup = {
-        type: "success",
-        message: "Expiration notifications sent successfully.",
-      };
-      dispatch(setPopup(dataPopup));
-    } else {
-      const dataPopup = {
-        type: "error",
-        message: "An error occurred while sending notifications.",
-      };
-      dispatch(setPopup(dataPopup));
-    }
-  };
   
-  useEffect(() => {
-    handleSendExpirationNotifications();
-  }, []);
 
   useEffect(() => {
     handlefetchSoftwares();

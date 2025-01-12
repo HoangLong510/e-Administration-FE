@@ -161,7 +161,6 @@ export default function ScheduleFull() {
       }
     }
     if (!foundCurrentWeek) {
-      console.error("Current week not found in generated weeks.");
     }
   };
 
@@ -177,7 +176,6 @@ export default function ScheduleFull() {
 
   const getDaysInWeek = (week) => {
     if (!week || !week.startDate || !week.endDate) {
-      console.error("Invalid week data", week);
       return [];
     }
 
@@ -206,11 +204,11 @@ export default function ScheduleFull() {
 
       setScheduleData(formattedData);
     } catch (err) {
-      console.error("Error fetching schedules:", err);
     }
   };
 
   useEffect(() => {
+    
     handleGetAllSchedule();
   }, [week, year]);
 
@@ -232,7 +230,6 @@ export default function ScheduleFull() {
           const ScheduleById = await GetScheduleByIdAPI(ID);
           fullname = ScheduleById?.fullName || "Unknown";
         } catch (err) {
-          console.error(`Error fetching fullname for ID ${ID}:`, err);
         }
   
         const updatedSchedule = {
@@ -262,7 +259,6 @@ export default function ScheduleFull() {
         groupedSchedules[day].sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
       }
     } catch (err) {
-      console.error("Error processing schedules:", err);
     }
   
     return groupedSchedules;
