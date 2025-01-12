@@ -14,6 +14,7 @@ import {
     Checkbox,
     Grid,
     InputAdornment,
+    Chip,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
@@ -24,6 +25,13 @@ import { useDispatch } from 'react-redux';
 import { setPopup } from '~/libs/features/popup/popupSlice';
 import { clearLoading, setLoading } from '~/libs/features/loading/loadingSlice';
 import { Link, useParams } from 'react-router-dom';
+
+const RenderStatus = ({ status }) => {
+    if (status) {
+        return <Chip label="Active" color="primary" size="small" />
+    }
+    return <Chip label="Disable" color="error" size="small" />
+}
 
 export default function LabDevices({ labName }) {
     const dispatch = useDispatch();
@@ -210,6 +218,7 @@ export default function LabDevices({ labName }) {
                                 </TableCell>
                                 <TableCell>Device</TableCell>
                                 <TableCell>Description</TableCell>
+                                <TableCell>Status</TableCell> {/* Add a Status column */}
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -232,11 +241,12 @@ export default function LabDevices({ labName }) {
                                         </Box>
                                     </TableCell>
                                     <TableCell>{device.description}</TableCell>
+                                    <TableCell><RenderStatus status={device.status} /></TableCell> {/* Show status with color */}
                                 </TableRow>
                             ))}
                             {devices.length === 0 && (
                                 <TableRow sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                                    <TableCell colSpan={3} sx={{ textAlign: 'center' }}>No data found</TableCell>
+                                    <TableCell colSpan={4} sx={{ textAlign: 'center' }}>No data found</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>

@@ -28,27 +28,31 @@ export default function AddSoftware() {
     licenseExpire: '',
     status: '',
   });
-
+  const [originalLicenseExpire, setOriginalLicenseExpire] = useState('');
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
 
   useEffect(() => {
     if (id) {
-      const fetchData = async () => {
-        const res = await getSoftwareByIdApi(id);
-        if (res.success) {
-          const software = res.software;
-          setFormData({
-            name: software.name,
-            description: software.description,
-            licenseExpire: new Date(software.licenseExpire).toISOString().split('T')[0],  // Convert to YYYY-MM-DD format
-            status: software.status ? 'active' : 'Disable',
-          });
-        }
-      };
-      fetchData();
+        const fetchData = async () => {
+            const res = await getSoftwareByIdApi(id);
+            if (res.success) {
+                const software = res.software;
+                const isoDate = new Date(software.licenseExpire);
+                isoDate.setMinutes(isoDate.getMinutes() - isoDate.getTimezoneOffset());
+                const formattedDate = isoDate.toISOString().split('T')[0];
+                setFormData({
+                    name: software.name,
+                    description: software.description,
+                    licenseExpire: formattedDate,  // Convert to YYYY-MM-DD format without time zone adjustment
+                    status: software.status ? 'active' : 'Disable',
+                });
+                setOriginalLicenseExpire(formattedDate);
+            }
+        };
+        fetchData();
     }
-  }, [id]);
+}, [id]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -75,8 +79,8 @@ export default function AddSoftware() {
     if (name === 'licenseExpire') {
       const selectedDate = new Date(value);
       const currentDate = new Date();
-      if (selectedDate <= currentDate.setDate(currentDate.getDate() + 7)) {
-        error = 'License Expire date must be at least 7 days from today';
+      if (selectedDate < currentDate.setHours(0, 0, 0, 0)) {
+        error = 'License Expire date cannot be earlier than today';
       }
     }
     if (value.trim() === '') {
@@ -90,56 +94,75 @@ export default function AddSoftware() {
 
     const validationErrors = {};
     Object.keys(formData).forEach((key) => {
-      validationErrors[key] = validateField(key, formData[key]);
+        validationErrors[key] = validateField(key, formData[key]);
     });
 
     if (Object.keys(validationErrors).some(key => validationErrors[key])) {
-      setErrors(validationErrors);
-      setTouched(Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
-      return;
+        setErrors(validationErrors);
+        setTouched(Object.keys(formData).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
+        return;
     }
 
     const data = {
-      name: formData.name,
-      description: formData.description,
-      licenseExpire: formData.licenseExpire,
-      status: formData.status === 'active',
+        name: formData.name,
+        description: formData.description,
+        licenseExpire: formData.licenseExpire,
+        status: formData.status === 'active',
     };
+
+    // Check if LicenseExpire has changed and is valid
+    if (id && formData.licenseExpire === originalLicenseExpire) {
+        delete data.licenseExpire;  
+    } else {
+        const currentDate = new Date();
+        const selectedDate = new Date(formData.licenseExpire);
+        if (selectedDate < currentDate.setHours(0, 0, 0, 0)) {
+            setErrors((prev) => ({
+                ...prev,
+                licenseExpire: 'License Expire date cannot be earlier than today'
+            }));
+            setTouched((prev) => ({
+                ...prev,
+                licenseExpire: true
+            }));
+            return;
+        }
+    }
 
     dispatch(setLoading());
     try {
-      let response;
-      if (id) {
-        response = await updateSoftwareApi(id, data);
-      } else {
-        response = await createSoftwareApi(data);
-      }
-      dispatch(clearLoading());
-      if (response.success) {
-        dispatch(setPopup({ type: 'success', message: id ? 'Software updated successfully!' : 'Software added successfully!' }));
-        if (!id) {
-          setFormData({
-            name: '',
-            description: '',
-            licenseExpire: '',
-            status: '',
-          });
-          setErrors({});
-          setTouched({});
+        let response;
+        if (id) {
+            response = await updateSoftwareApi(id, data);
         } else {
-          navigate('/management/software');
+            response = await createSoftwareApi(data);
         }
-      } else {
-        if (response.errors) {
-          setErrors(response.errors);
-          setTouched(Object.keys(response.errors).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
+        dispatch(clearLoading());
+        if (response.success) {
+            dispatch(setPopup({ type: 'success', message: id ? 'Software updated successfully!' : 'Software added successfully!' }));
+            if (!id) {
+                setFormData({
+                    name: '',
+                    description: '',
+                    licenseExpire: '',
+                    status: '',
+                });
+                setErrors({});
+                setTouched({});
+            } else {
+                navigate('/management/software');
+            }
+        } else {
+            if (response.errors) {
+                setErrors(response.errors);
+                setTouched(Object.keys(response.errors).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
+            }
+            dispatch(setPopup({ type: 'error', message: response.message }));
         }
-        dispatch(setPopup({ type: 'error', message: response.message }));
-      }
     } catch (error) {
-      console.error('Error response:', error.response);
-      dispatch(clearLoading());
-      dispatch(setPopup({ type: 'error', message: id ? 'An error occurred while updating the software.' : 'An error occurred while adding the software.' }));
+        console.error('Error response:', error.response);
+        dispatch(clearLoading());
+        dispatch(setPopup({ type: 'error', message: id ? 'An error occurred while updating the software.' : 'An error occurred while adding the software.' }));
     }
   };
 
