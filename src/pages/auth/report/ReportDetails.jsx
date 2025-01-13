@@ -109,7 +109,7 @@ export default function ReportDetails() {
   }, [id]);
 
   const handleCompleteReport = async () => {
-    const allTasksCompleted = report.tasks.every((task) => task.status === 2);
+    const allTasksCompleted = report.tasks.every((task) => task.status === 3 || task.status === 0);
 
     if (!allTasksCompleted) {
       dispatch(
@@ -477,7 +477,7 @@ export default function ReportDetails() {
               No tasks available.
             </Typography>
           )}
-          {tasks.every((task) => task.status === 3) && report?.status !== 3 && (
+          {role === "Admin" && tasks.every((task) => task.status === 3 || task.status === 0) && report?.status !== 2 && (
             <Box sx={{ marginTop: 2 }}>
               <Button
                 variant="contained"
