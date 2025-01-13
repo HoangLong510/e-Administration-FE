@@ -167,6 +167,21 @@ export default function ReportDetails() {
     }
   };
 
+  const getStatusTaskText = (status) => {
+    switch (status) {
+      case 0:
+        return "Canceled";
+      case 1:
+        return "Pending";
+      case 2:
+        return "InProgress";
+      case 3:
+        return "Completed";
+      default:
+        return "Unknown";
+    }
+  };
+
   const getTitleText = (title) => {
     switch (title) {
       case 0:
@@ -423,7 +438,11 @@ export default function ReportDetails() {
           {tasks?.length > 0 ? (
             <Box sx={{ display: "flex", flexWrap: "wrap" }}>
               {tasks.map((task) => (
-                <TaskBox sx={{cursor:"pointer"}} onClick={() => navigate(`/task-detail/${task.id}`)} key={task.id}>
+                <TaskBox
+                  sx={{ cursor: "pointer" }}
+                  onClick={() => navigate(`/task-detail/${task.id}`)}
+                  key={task.id}
+                >
                   <Grid container alignItems="center">
                     <Grid item xs={12}>
                       <Typography variant="subtitle1">{task.title}</Typography>
@@ -438,7 +457,7 @@ export default function ReportDetails() {
                     </Typography>
                     <Grid item xs={12} textAlign="right">
                       <Chip
-                        label={getStatusText(task.status)}
+                        label={getStatusTaskText(task.status)}
                         color={
                           task.status === 0
                             ? "warning"
@@ -450,18 +469,6 @@ export default function ReportDetails() {
                       />
                     </Grid>
                   </Grid>
-                  {tasks.every((task) => task.status === 2) &&
-                    report?.status !== 2 && (
-                      <Box sx={{ marginTop: 2 }}>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          onClick={handleCompleteReport}
-                        >
-                          Complete Report
-                        </Button>
-                      </Box>
-                    )}
                 </TaskBox>
               ))}
             </Box>
@@ -470,8 +477,20 @@ export default function ReportDetails() {
               No tasks available.
             </Typography>
           )}
+          {tasks.every((task) => task.status === 3) && report?.status !== 3 && (
+            <Box sx={{ marginTop: 2 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleCompleteReport}
+              >
+                Complete Report
+              </Button>
+            </Box>
+          )}
         </Grid>
       </Grid>
+
       <Grid item xs={12} mb={4}>
         <Divider />
       </Grid>
