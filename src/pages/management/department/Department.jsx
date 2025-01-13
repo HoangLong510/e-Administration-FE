@@ -49,8 +49,8 @@ function DepartmentManager() {
   const [users, setUsers] = useState([]);
   const [editingDepartment, setEditingDepartment] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [openConfirmDialog, setOpenConfirmDialog] = useState(false); 
-  const [actionType, setActionType] = useState(null); 
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+  const [actionType, setActionType] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [searchQuery, setSearchQuery] = useState("");
@@ -107,7 +107,7 @@ function DepartmentManager() {
     }
 
     setActionType("add");
-    setOpenConfirmDialog(true); 
+    setOpenConfirmDialog(true);
   };
 
   const handleUpdateDepartment = () => {
@@ -123,7 +123,7 @@ function DepartmentManager() {
     }
 
     setActionType("update");
-    setOpenConfirmDialog(true); 
+    setOpenConfirmDialog(true);
   };
 
   const confirmAction = async () => {
@@ -161,7 +161,7 @@ function DepartmentManager() {
         dispatch(clearLoading());
       }
     }
-    setOpenConfirmDialog(false); 
+    setOpenConfirmDialog(false);
   };
 
   const handleEditClick = (department) => {
@@ -223,7 +223,9 @@ function DepartmentManager() {
                     onChange={(e) => setNewHod(e.target.value)}
                     label="Head of Department"
                   >
-                    <MenuItem value={0}>--- select HOD ---</MenuItem>
+                    <MenuItem value={0} disabled>
+                      --- select HOD ---
+                    </MenuItem>
                     {users.length > 0 &&
                       users.map((u) => {
                         return (
@@ -415,7 +417,9 @@ function DepartmentManager() {
                   }
                   label="Select HOD"
                 >
-                  <MenuItem value={0}>--- select HOD ---</MenuItem>
+                  <MenuItem value={0} disabled>
+                    --- select HOD ---
+                  </MenuItem>
                   {users.length > 0 &&
                     users.map((u) => {
                       return (
