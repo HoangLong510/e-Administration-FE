@@ -32,6 +32,7 @@ const menuItems = [
             "Admin",
             "Instructor",
             "HOD",
+            "TechnicalStaff",
             "Student",
         ]
     },
